@@ -1,0 +1,24 @@
+# Checks the package on every pull request and push to main: the lock file, lint, format,
+# types and tests. The tests fake every call to mise and qretools, so this job needs
+# neither.
+name: Check
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: astral-sh/setup-uv@v10.3.3
+      - run: uv sync --locked
+      - run: uv run ruff check
+      - run: uv run ruff format --check
+      - run: uv run mypy --strict
+      - run: uv run pytest
