@@ -90,5 +90,6 @@ run. Start the run again.
 ## Comparison with real GSS answers
 
 The harness does not compare the answers of the model with the answers of real GSS
-respondents. That comparison is outside the harness. The QREtools research skill
-describes it.
+respondents. That comparison is outside the harness. The
+[QREtools research skill](https://github.com/JHUCities/qretools-skill) describes it, in its
+example [GSS 2010](https://github.com/JHUCities/qretools-skill/blob/main/qretools-research/examples/gss-2010.md).
