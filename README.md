@@ -53,6 +53,9 @@ to the npm registry.
 
 ## Run a model through an instrument
 
+[`examples/gss_2010`](examples/gss_2010/README.md) gives a full example: the GSS 2010
+instrument, from its URL.
+
 1. Run `qretools build` in the qretools workspace. The DDI of each instrument is
    `dist/instruments/<name>.json`.
 2. Write a config. See "The config".
@@ -77,7 +80,7 @@ exist, or it must be empty.
 
 ## The config
 
-[`examples/config.toml`](examples/config.toml) is an example.
+[`examples/gss_2010/config.toml`](examples/gss_2010/config.toml) is an example.
 
 | Table | Key | What it holds |
 |---|---|---|

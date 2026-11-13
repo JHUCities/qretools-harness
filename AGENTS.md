@@ -27,7 +27,7 @@ src/qretools_harness/
   chat.py       the only module that opens a network connection: the model server,
                 and an instrument's DDI by URL
 examples/
-  config.toml   an example config; the tests read it
+  gss_2010/     an example config (the tests read it) and its procedure
 tests/
   fake.py       stand-ins for running processes and for a model server
   conftest.py   the `server` fixture: a local model server

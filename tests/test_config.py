@@ -5,7 +5,7 @@ import pytest
 from qretools_harness.config import Config, Urn, parse, stale
 from qretools_harness.qretools import Refused
 
-EXAMPLE = (Path(__file__).parent.parent / "examples/config.toml").read_text()
+EXAMPLE = (Path(__file__).parent.parent / "examples/gss_2010/config.toml").read_text()
 
 HERE = Path("/configs")
 
@@ -35,6 +35,9 @@ def refused(text: str) -> str:
 
 def test_the_example_parses() -> None:
     config = parsed(EXAMPLE)
+    assert config.instrument == (
+        "https://jhucities.github.io/qretools-gss/v15/instruments/gss_2010.json"
+    )
     assert config.model.endpoint == "http://127.0.0.1:9931/v1"
     assert config.generation["top_k"] == 40  # passed through unread
     assert config.prompts == {
