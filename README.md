@@ -81,7 +81,7 @@ exist, or it must be empty.
 
 | Table | Key | What it holds |
 |---|---|---|
-| (top) | `instrument` | The path of the instrument's DDI. A relative path starts from the folder of the config. Write this key before the first table. |
+| (top) | `instrument` | The path or the `https://` URL of the instrument's DDI. A relative path starts from the folder of the config. Write this key before the first table. |
 | `model` | `endpoint` | The base URL of the model server, for example `http://127.0.0.1:9931/v1`. |
 | `model` | `name` | The name of the model. |
 | `model` | `timeout` | The maximum time for one reply, in seconds. |
@@ -98,7 +98,8 @@ Rules for the config:
 - Give `generation.seed` and `run.no_answer`.
 - Do not write an API key in the config. The run folder keeps a copy of the config.
 - The harness refuses an unknown key, except in `generation`.
-- The harness does not accept a tag reference (`owner/repo@tag:name`) for `instrument` yet.
+- The harness does not accept a tag reference (`owner/repo@tag:name`) for `instrument`.
+  Give the `https://` URL of the instrument's DDI in the release.
 
 `check-config` refuses the config in these conditions:
 
@@ -112,6 +113,20 @@ If the version is different, then the question changed after you wrote its promp
 the question again. Change the prompt if necessary. Then write the new version in the URN.
 
 `check-config` does not connect to the model server, and does not run qretools.
+
+### An instrument by URL
+
+If `instrument` is a URL, then the harness reads the DDI from the URL. It reads only
+`https://` URLs.
+
+- `check-config` reads the URL one time. `respond` also reads it one time, before the
+  first respondent.
+- The harness gives the URL to qretools without change. qretools reads the URL again at
+  each step, and `qretools responses` reads it one more time.
+- Do not change the DDI at the URL during a run.
+- The first line of `traces.jsonl` records the SHA-256 digest of the DDI that the harness
+  read. The dataset records the digest of the DDI that `qretools responses` read. If the
+  two digests are different, then the DDI changed during the run.
 
 ## What `respond` does
 
@@ -144,11 +159,11 @@ can hold local paths of the server's computer, for example the path of the model
 To publish the provenance without the answers, write a view with qretools:
 
 ```sh
-qretools dataset export runs/try-1/dataset.json --provenance --ddi <file.json> -o provenance.json
+qretools dataset export runs/try-1/dataset.json --provenance --ddi <DDI> -o provenance.json
 ```
 
-`--ddi` is the DDI of the instrument. If the DDI declares access levels, then also give
-`--access <level>`.
+`--ddi` is the DDI of the instrument: its path or its URL. If the DDI declares access
+levels, then also give `--access <level>`.
 
 ### What a run records
 
@@ -156,7 +171,8 @@ The first line of `traces.jsonl` records each setting that can change the result
 
 - the command line, the number of respondents and the seed of each respondent;
 - the config, with the defaults;
-- the path of the instrument and its SHA-256 digest;
+- the path or the URL of the instrument, and the SHA-256 digest of the DDI that the
+  harness read;
 - the qretools version, and the harness version;
 - what the server tells about itself: its software, its build, the context size, the
   sampler settings, the chat template and its launch arguments.
@@ -206,7 +222,8 @@ The exit codes are:
   of the largest prompt.
 - To get the same answers again, llama.cpp must use one slot (`-np 1`).
 - The harness gives the options in their written order. It ignores `responseOrder`.
-- Each step runs `npx`. This adds a fraction of a second to each step.
+- Each step runs `npx`. This adds a fraction of a second to each step. If `instrument`
+  is a URL, then qretools reads the URL at each step. This adds more time to each step.
 
 ## Development
 

@@ -5,6 +5,7 @@ import pytest
 from fake import Fake
 
 from qretools_harness.cli import main
+from qretools_harness.qretools import Refused
 
 
 @pytest.mark.parametrize("argv", [[], ["nothing"], ["build"], ["check-config"]])
@@ -66,6 +67,28 @@ def test_check_config_refuses_what_it_cant_read(
     assert main(["check-config", str(config)], Fake({})) == 1
     if problem.endswith("ddi"):
         assert ddi.name in capsys.readouterr().err
+
+
+def test_check_config_reads_an_instrument_by_url(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    url = "https://example.org/v1/instruments/gss_2010.json"
+    ddi = instrument_at(tmp_path, "6").read_bytes()
+    config = config_at(
+        tmp_path, CONFIG.replace('"../dist/instruments/gss_2010.json"', f'"{url}"')
+    )
+    asked: list[str] = []
+
+    def get(u: str) -> bytes | Refused:
+        asked.append(u)
+        return ddi if u == url else Refused(f"Can't read {u}: it answered 404.")
+
+    assert main(["check-config", str(config)], Fake({}), get) == 0
+    assert asked == [url]
+    assert f"matches {url}" in capsys.readouterr().out
+    config.write_text(config.read_text().replace(url, url + "x"))
+    assert main(["check-config", str(config)], Fake({}), get) == 1
+    assert f"Can't read {url}x" in capsys.readouterr().err
 
 
 def named(name: str) -> dict[str, object]:

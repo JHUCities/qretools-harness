@@ -1,5 +1,5 @@
 """The only module that opens a network connection: a client for an OpenAI-compatible
-chat server, such as llama.cpp's.
+chat server, such as llama.cpp's, and the reader of an instrument's DDI by URL.
 
 Every function returns a value. Nothing here raises for a failed request.
 """
@@ -135,6 +135,31 @@ def fetch(
         return Unreachable(
             f"The model server at {url} didn't answer as HTTP: {error!r}."
         )
+
+
+# Seconds to read an instrument's DDI by URL.
+READ_TIMEOUT = 60
+
+
+def read_url(url: str) -> bytes | Refused:
+    """The bytes at an https URL, or why they can't be read. A redirect to another
+    scheme is refused: `config` accepts only https."""
+    try:
+        with urllib.request.urlopen(url, timeout=READ_TIMEOUT) as response:
+            if urllib.parse.urlsplit(response.url).scheme != "https":
+                return Refused(f"{url} redirects to {response.url}, which isn't https.")
+            body: bytes = response.read()
+            return body
+    except urllib.error.HTTPError as error:
+        return Refused(f"Can't read {url}: it answered {error.code}.")
+    except TimeoutError:
+        return Refused(f"Can't read {url}: it gave no reply in {READ_TIMEOUT}s.")
+    except urllib.error.URLError as error:
+        if isinstance(error.reason, TimeoutError):  # a connect that timed out
+            return Refused(f"Can't read {url}: it gave no reply in {READ_TIMEOUT}s.")
+        return Refused(f"Can't read {url}: {error.reason}.")
+    except (OSError, http.client.HTTPException) as error:
+        return Refused(f"Can't read {url}: {error!r}.")
 
 
 # A launch argument or setting whose value is a secret: it never goes into a trace.

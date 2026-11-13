@@ -4,6 +4,7 @@ import json
 import socket
 import threading
 from types import MappingProxyType
+from typing import Self
 
 import pytest
 from fake import GOOD, Handler, Server
@@ -12,6 +13,7 @@ from qretools_harness.chat import (
     Reply,
     Unreachable,
     complete,
+    read_url,
     redacted,
     reply_of,
     server_info,
@@ -193,3 +195,45 @@ def test_redaction_covers_keys_short_flags_and_one_line_presets() -> None:
     assert redacted(["-hft", "t", "-c", "8192"]) == ["-hft", "<redacted>", "-c", "8192"]
     assert redacted("api-key = x") == "api-key = <redacted>"
     assert redacted("model = /m.gguf") == "model = /m.gguf"
+
+
+class Response:
+    """What urlopen gives: the final URL, after redirects, and the body."""
+
+    def __init__(self, url: str) -> None:
+        self.url = url
+
+    def __enter__(self) -> Self:
+        return self
+
+    def __exit__(self, *_: object) -> None:
+        pass
+
+    def read(self) -> bytes:
+        return b"{}"
+
+
+URL = "https://example.org/v1/i.json"
+
+
+def test_read_url_gives_the_bytes(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr("urllib.request.urlopen", lambda url, timeout: Response(url))
+    assert read_url(URL) == b"{}"
+
+
+def test_read_url_refuses_a_redirect_to_http(monkeypatch: pytest.MonkeyPatch) -> None:
+    to = "http://example.org/v1/i.json"
+    monkeypatch.setattr("urllib.request.urlopen", lambda url, timeout: Response(to))
+    reply = read_url(URL)
+    assert isinstance(reply, Refused) and to in reply.reason
+
+
+def test_a_url_that_cant_be_read_is_named(server: Server) -> None:
+    # The stand-in is http, and answers 404 for a page it doesn't have.
+    url = f"http://127.0.0.1:{server.server_address[1]}/i.json"
+    reply = read_url(url)
+    assert isinstance(reply, Refused)
+    assert reply.reason == f"Can't read {url}: it answered 404."
+    unreachable = read_url("https://127.0.0.1:1/i.json")
+    assert isinstance(unreachable, Refused)
+    assert "https://127.0.0.1:1/i.json" in unreachable.reason

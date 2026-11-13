@@ -105,9 +105,11 @@ def harness(cwd: Path) -> Qretools | Refused:
 
 
 def next_step(
-    q: Qretools, instrument: Path, state: object, run: Run = run_process
+    q: Qretools, instrument: Path | str, state: object, run: Run = run_process
 ) -> Mapping[str, Any] | Refused:
     """`qretools next`: the next step of an interview, as the JSON qretools replies.
+
+    `instrument` is a path or an https URL, which qretools reads at each call.
 
     Exit 1 means the state can't belong to the instrument: a bug here, or a DDI that
     changed during the run.

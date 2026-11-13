@@ -1,5 +1,6 @@
 """`respond` end to end, with stand-ins for qretools and for the model."""
 
+import hashlib
 import json
 import os
 import shutil
@@ -160,12 +161,32 @@ def test_the_first_trace_records_every_parameter_of_the_run(tmp_path: Path) -> N
         "inputs": {},
         "prompts": {},
     }
-    assert start["instrument"]["sha256"]
+    ddi = (tmp_path / "instrument.json").read_bytes()
+    assert start["instrument"] == {
+        "path": str(tmp_path / "instrument.json"),
+        "sha256": hashlib.sha256(ddi).hexdigest(),
+    }
     assert start["qretools"] == {
         "version": QRETOOLS.partition("@")[2],
         "command": ["npx", "-y", QRETOOLS],
     }
     assert start["server"] == SERVER
+
+
+def test_an_instrument_by_url_goes_to_qretools_as_written(tmp_path: Path) -> None:
+    url = "https://example.org/v1/instruments/i.json"
+    config = files(tmp_path)
+    config.write_text(CONFIG.replace('"instrument.json"', f'"{url}"'))
+    ddi = json.dumps({"QuestionItem": {"k": {"ID": "tenure"}}}).encode()
+    fake, out = qretools(), tmp_path / "r"
+    assert respond(config, 1, out, fake, Model(), info=info, get=lambda u: ddi) == 0
+    start = json.loads((out / "traces.jsonl").read_text().splitlines()[0])
+    assert start["instrument"] == {
+        "url": url,
+        "sha256": hashlib.sha256(ddi).hexdigest(),
+    }
+    assert [argv[4] for argv, _, _ in fake.calls] == [url, url, "answers.csv"]
+    assert fake.calls[-1][0][6] == url  # responses --ddi
 
 
 @pytest.mark.parametrize(

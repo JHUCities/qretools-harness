@@ -43,9 +43,9 @@ class Model:
 
 @dataclass(frozen=True)
 class Config:
-    instrument: (
-        Path  # the instrument's DDI; a relative path is from the config's folder
-    )
+    # The instrument's DDI: a path (a relative one is from the config's folder), or an
+    # https URL as text.
+    instrument: Path | str
     model: Model
     generation: Mapping[str, object]  # sent to the server as written
     system: str
@@ -186,16 +186,24 @@ def _prompts(value: object) -> Mapping[Urn, str]:
     return MappingProxyType(prompts)
 
 
-def _instrument(value: object, folder: Path) -> Path:
+def _instrument(value: object, folder: Path) -> Path | str:
     text = _text(value, "instrument")
+    # `://`, not urlsplit's scheme: a Windows path `C:\\x.json` has the scheme `c`.
+    if "://" in text:
+        url = urlsplit(text)
+        if url.scheme != "https" or not url.hostname:
+            raise _Bad(f"`instrument` must be an https URL or a path, not {text}.")
+        return text
     if not text.endswith(".json"):
         if "@" in text:
             raise _Bad(
-                f"`instrument` is a tag reference ({text}). The harness can't use one"
-                " yet, because `qretools next` reads only a DDI file. Build the"
-                " instrument with qretools and give the path of its .json file."
+                f"`instrument` is a tag reference ({text}). Give the https URL of"
+                " the instrument's DDI in that release instead."
             )
-        raise _Bad("`instrument` must be the path of the instrument's DDI (.json).")
+        raise _Bad(
+            "`instrument` must be the path of the instrument's DDI (.json),"
+            " or its https URL."
+        )
     return folder / text  # an absolute path stays as written
 
 

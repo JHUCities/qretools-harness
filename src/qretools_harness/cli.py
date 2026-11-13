@@ -48,8 +48,14 @@ def positive(text: str) -> int:
     return int(text)
 
 
-def checked(config_path: Path) -> config.Config | qretools.Refused:
-    """The config, if it reads and every prompt matches its instrument's DDI."""
+Get = Callable[[str], bytes | qretools.Refused]  # the bytes at an https URL
+
+
+def checked(
+    config_path: Path, get: Get = chat.read_url
+) -> tuple[config.Config, bytes] | qretools.Refused:
+    """The config, if it reads and every prompt matches its instrument's DDI; and the
+    bytes of that DDI as the harness read them."""
     try:
         text = config_path.read_text(encoding="utf-8")
     except (OSError, UnicodeDecodeError) as error:
@@ -57,21 +63,29 @@ def checked(config_path: Path) -> config.Config | qretools.Refused:
     parsed = config.parse(text, config_path.parent.absolute())
     if isinstance(parsed, qretools.Refused):
         return qretools.Refused(f"{config_path}: {parsed.reason}")
+    if isinstance(parsed.instrument, str):
+        raw = get(parsed.instrument)
+        if isinstance(raw, qretools.Refused):
+            return raw
+    else:
+        try:
+            raw = parsed.instrument.read_bytes()
+        except OSError as error:
+            return qretools.Refused(
+                f"Can't read the instrument {parsed.instrument}: {error}."
+            )
     try:
-        ddi = json.loads(parsed.instrument.read_text(encoding="utf-8"))
-    except (OSError, UnicodeDecodeError) as error:
-        return qretools.Refused(
-            f"Can't read the instrument {parsed.instrument}: {error}."
-        )
-    except ValueError:
+        ddi = json.loads(raw)
+    except ValueError:  # UnicodeDecodeError is a ValueError
         return qretools.Refused(f"The instrument {parsed.instrument} isn't JSON.")
-    return config.rosters(ddi) or config.stale(parsed, ddi) or parsed
+    return config.rosters(ddi) or config.stale(parsed, ddi) or (parsed, raw)
 
 
-def check_config(config_path: Path) -> int:
-    parsed = checked(config_path)
-    if isinstance(parsed, qretools.Refused):
-        return refuse(parsed)
+def check_config(config_path: Path, get: Get = chat.read_url) -> int:
+    done = checked(config_path, get)
+    if isinstance(done, qretools.Refused):
+        return refuse(done)
+    parsed, _ = done
     print(
         f"{config_path} matches {parsed.instrument}:"
         f" {len(parsed.prompts)} prompt(s) checked."
@@ -122,10 +136,6 @@ def now() -> str:
     return datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
-def digest(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
-
-
 def respond(
     config_path: Path,
     respondents: int,
@@ -135,10 +145,12 @@ def respond(
     clock: Callable[[], str] = now,
     command: Sequence[str] = (),
     info: Callable[[config.Model], dict[str, object]] = chat.server_info,
+    get: Get = chat.read_url,
 ) -> int:
-    cfg = checked(config_path)
-    if isinstance(cfg, qretools.Refused):
-        return refuse(cfg)
+    done = checked(config_path, get)
+    if isinstance(done, qretools.Refused):
+        return refuse(done)
+    cfg, raw = done
     seed = cfg.generation.get("seed")
     if not isinstance(seed, int):
         return refuse(
@@ -153,7 +165,12 @@ def respond(
     q = qretools.harness(out)
     if isinstance(q, qretools.Refused):
         return refuse(q)
-    instrument = cfg.instrument.resolve()
+    # A URL goes to qretools as written: qretools reads it again at each step, and
+    # `responses` reads it once more (the owner chose this over a copy in the run
+    # folder). So the digest in the trace is of what check-config read here only.
+    instrument = (
+        cfg.instrument if isinstance(cfg.instrument, str) else cfg.instrument.resolve()
+    )
 
     def ask_model(
         messages: Sequence[interview.Message], seed: int
@@ -182,7 +199,10 @@ def respond(
                 "outdir": str(out),
                 "seeds": [seed + i - 1 for i in range(1, respondents + 1)],
                 "config": config.effective(cfg),
-                "instrument": {"path": str(instrument), "sha256": digest(instrument)},
+                "instrument": {
+                    "url" if isinstance(instrument, str) else "path": str(instrument),
+                    "sha256": hashlib.sha256(raw).hexdigest(),
+                },
                 "qretools": {"version": q.version, "command": list(q.command)},
                 "qretools-harness": version("qretools-harness"),
                 "server": server,
@@ -280,12 +300,14 @@ def refuse(refused: qretools.Refused) -> int:
 
 
 def main(
-    argv: Sequence[str] | None = None, run: qretools.Run = qretools.run_process
+    argv: Sequence[str] | None = None,
+    run: qretools.Run = qretools.run_process,
+    get: Get = chat.read_url,
 ) -> int:
     args = parser().parse_args(argv)
     match args.command:
         case "check-config":
-            return check_config(args.config)
+            return check_config(args.config, get)
         case "respond":
             return respond(
                 args.config,
@@ -293,6 +315,7 @@ def main(
                 args.outdir,
                 run,
                 command=["qretools-harness", *(sys.argv[1:] if argv is None else argv)],
+                get=get,
             )
     return 2  # unreachable: argparse requires a known command
 
