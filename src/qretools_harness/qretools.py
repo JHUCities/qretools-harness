@@ -16,10 +16,10 @@ import hashlib
 import json
 import os
 import subprocess
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Protocol
+from typing import Any, Protocol
 
 TOOL = "npm:qretools"
 # The qretools that the harness calls, except for `build`. Change it only here.
@@ -176,3 +176,40 @@ def build(q: Qretools, outdir: Path, run: Run = run_process) -> Built | Refused:
     if done.code != 0:
         return Refused(f"qretools build refused or failed (exit {done.code}).")
     return Built(outdir / "ddi.json")
+
+
+def next_step(
+    q: Qretools, instrument: Path, state: object, run: Run = run_process
+) -> Mapping[str, Any] | Refused:
+    """`qretools next`: the next step of an interview, as the JSON qretools replies.
+
+    Exit 1 means the state can't belong to the instrument: a bug here, or a DDI that
+    changed during the run.
+    """
+    done = run(
+        q.argv("next", str(instrument), "-"), q.workspace, True, json.dumps(state)
+    )
+    if isinstance(done, Refused):
+        return done
+    if done.code != 0:
+        return failed("qretools next", done)
+    try:
+        reply = json.loads(done.stdout)
+    except ValueError:
+        reply = None
+    if not isinstance(reply, dict):
+        return Refused("qretools next didn't reply with a JSON object.")
+    return reply
+
+
+def responses(
+    q: Qretools, args: Sequence[str], run: Run = run_process
+) -> Refused | None:
+    """`qretools responses` with `args`, in the run folder. qretools prints its own
+    findings; they go straight to the terminal."""
+    done = run(q.argv("responses", *args), q.workspace, False)
+    if isinstance(done, Refused):
+        return done
+    if done.code != 0:
+        return Refused(f"qretools responses refused or failed (exit {done.code}).")
+    return None

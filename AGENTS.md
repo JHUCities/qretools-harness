@@ -23,11 +23,14 @@ src/qretools_harness/
   cli.py        the commands (argparse); exit 0 done, 1 refused or failed, 2 usage
   qretools.py   the only module that runs the qretools CLI
   config.py     the config (TOML), and its check against the instrument's DDI
+  interview.py  one interview: the prompts, the parsing of replies, the loop (pure)
   chat.py       the only module that opens a network connection: the model server
 examples/
   config.toml   an example config; the tests read it
 tests/
-  fake.py       a stand-in for running processes
+  fake.py       stand-ins for running processes and for a model server
+  conftest.py   the `server` fixture: a local model server
+  fixtures/     households.json, an instrument's DDI from qretools' own tests
   test_*.py     unit tests; test_integration.py builds a real workspace when asked
 ```
 
