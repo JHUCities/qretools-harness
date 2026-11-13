@@ -2,6 +2,7 @@
 
 import argparse
 import csv
+import hashlib
 import io
 import json
 import shlex
@@ -78,16 +79,18 @@ def check_config(config_path: Path) -> int:
     return 0
 
 
-Interview = tuple[str, str, list[interview.Answer]]  # start, end, values
+Interview = tuple[
+    int, str, str, list[interview.Answer]
+]  # respondent, start, end, values
 
 
 def answers_csv(interviews: Sequence[Interview]) -> str:
-    """The long CSV that `qretools responses` reads: respondent i's start time, values
-    and end time, for i from 1."""
+    """The long CSV that `qretools responses` reads: each finished respondent's start
+    time, values and end time. A respondent who didn't finish has no lines."""
     out = io.StringIO()
     rows = csv.writer(out, lineterminator="\n")
     rows.writerow(["respondent", "variable", "row", "value"])
-    for i, (start, end, values) in enumerate(interviews, 1):
+    for i, start, end, values in interviews:
         rows.writerow([i, "start", "", start])
         for a in values:
             rows.writerow([i, a["variable"], a.get("row", ""), a["value"]])
@@ -95,23 +98,32 @@ def answers_csv(interviews: Sequence[Interview]) -> str:
     return out.getvalue()
 
 
-def runtime_of(traces: Sequence[interview.Trace], asked: str) -> tuple[str, str | None]:
-    """The model that the server says it served (else the one asked for), and the
-    server's build, if every reply gives the same one. A reply that names none counts
-    as one more answer, so the two fall back."""
-    calls = [t for t in traces if t.get("kind") == "call"]
-    models = {t.get("model") for t in calls}
-    builds = {t.get("fingerprint") for t in calls}
-    name = models.pop() if len(models) == 1 else None
-    build = builds.pop() if len(builds) == 1 else None
+def runtime_of(
+    traces: Sequence[interview.Trace], info: Mapping[str, object]
+) -> tuple[str, str | None]:
+    """The server's software and its build: from the replies if they all agree, else
+    from what the server said about itself before the run. The model and its settings
+    are not the runtime: the cited config pins them."""
+
+    def agreed(key: str) -> str | None:
+        found = {t.get(key) for t in traces if t.get("kind") == "call"}
+        return str(found.pop()) if len(found) == 1 and None not in found else None
+
+    props = info.get("props")
+    build = props.get("build_info") if isinstance(props, dict) else None
+    server = info.get("server")
     return (
-        str(name) if name else asked,
-        str(build) if build else None,
+        agreed("server") or (str(server) if server else "unknown"),
+        agreed("fingerprint") or (str(build) if build else None),
     )
 
 
 def now() -> str:
     return datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def digest(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
 def respond(
@@ -121,6 +133,8 @@ def respond(
     run: qretools.Run,
     complete: interview.Complete | None = None,
     clock: Callable[[], str] = now,
+    command: Sequence[str] = (),
+    info: Callable[[config.Model], dict[str, object]] = chat.server_info,
 ) -> int:
     cfg = checked(config_path)
     if isinstance(cfg, qretools.Refused):
@@ -148,8 +162,10 @@ def respond(
 
     out.mkdir(parents=True, exist_ok=True)
     (out / "config.toml").write_bytes(config_path.read_bytes())
+    server = info(cfg.model)
     traces: list[interview.Trace] = []
     interviews: list[Interview] = []
+    stopped: list[str] = []
     with (out / "traces.jsonl").open("a", encoding="utf-8") as file:
 
         def record(trace: interview.Trace) -> None:
@@ -157,11 +173,19 @@ def respond(
             file.write(json.dumps(trace, ensure_ascii=False) + "\n")
             file.flush()
 
+        # Every parameter that can change the run's outcome: the dataset cites this file.
         record(
             {
                 "kind": "start",
-                "qretools": q.version,
+                "command": list(command),
+                "respondents": respondents,
+                "outdir": str(out),
+                "seeds": [seed + i - 1 for i in range(1, respondents + 1)],
+                "config": config.effective(cfg),
+                "instrument": {"path": str(instrument), "sha256": digest(instrument)},
+                "qretools": {"version": q.version, "command": list(q.command)},
                 "qretools-harness": version("qretools-harness"),
+                "server": server,
             }
         )
         for i in range(1, respondents + 1):
@@ -175,14 +199,14 @@ def respond(
                 record,
             )
             if isinstance(values, qretools.Refused):
-                return refuse(
-                    qretools.Refused(
-                        f"{values.reason}\nThe run stopped. {out / 'traces.jsonl'}"
-                        " holds what happened; the folder has no answers.csv."
-                    )
-                )
-            interviews.append((start, clock(), values))
-    (out / "answers.csv").write_text(answers_csv(interviews), encoding="utf-8")
+                record({"kind": "stopped", "respondent": str(i), "why": values.reason})
+                stopped.append(f"respondent {i} stopped: {values.reason}")
+                if isinstance(values, chat.Unreachable):
+                    # Every later respondent would wait and fail the same way.
+                    stopped.append("The run stopped: the model server gave no answer.")
+                    break
+                continue
+            interviews.append((i, start, clock(), values))
     for name in sorted(
         {str(t["input"]) for t in traces if t.get("how") == "not in the config"}
     ):
@@ -192,7 +216,16 @@ def respond(
             file=sys.stderr,
         )
     print(summary(traces, respondents))
-    name, build = runtime_of(traces, cfg.model.name)
+    if not interviews:
+        return refuse(
+            qretools.Refused(
+                "\n".join(stopped)
+                + f"\nNo respondent finished, so there is no dataset. {out / 'traces.jsonl'}"
+                " holds what happened."
+            )
+        )
+    (out / "answers.csv").write_text(answers_csv(interviews), encoding="utf-8")
+    name, build = runtime_of(traces, server)
     args = [
         "answers.csv",
         "--ddi",
@@ -210,13 +243,14 @@ def respond(
     ]
     made = qretools.responses(q, args, run)
     if made is not None:
-        return refuse(
-            qretools.Refused(
-                f"{made.reason}\nThe answers are in {out}. To try again:\n"
-                f"cd {shlex.quote(str(out))} && {shlex.join(q.argv('responses', *args))}"
-            )
+        stopped.append(
+            f"{made.reason}\nThe answers are in {out}. To try again:\n"
+            f"cd {shlex.quote(str(out))} && {shlex.join(q.argv('responses', *args))}"
         )
-    print(f"Dataset {out / 'dataset.json'} written (qretools {q.version}).")
+    else:
+        print(f"Dataset {out / 'dataset.json'} written (qretools {q.version}).")
+    if stopped:
+        return refuse(qretools.Refused("\n".join(stopped)))
     return 0
 
 
@@ -253,7 +287,13 @@ def main(
         case "check-config":
             return check_config(args.config)
         case "respond":
-            return respond(args.config, args.n, args.outdir, run)
+            return respond(
+                args.config,
+                args.n,
+                args.outdir,
+                run,
+                command=["qretools-harness", *(sys.argv[1:] if argv is None else argv)],
+            )
     return 2  # unreachable: argparse requires a known command
 
 

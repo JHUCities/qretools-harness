@@ -236,6 +236,25 @@ def parse(text: str, folder: Path) -> Config | Refused:
         return Refused(str(bad))
 
 
+def effective(config: Config) -> dict[str, object]:
+    """The config as the run uses it, after defaults, as JSON: for the record."""
+    return {
+        "instrument": str(config.instrument),
+        "model": {
+            "endpoint": config.model.endpoint,
+            "name": config.model.name,
+            "timeout": config.model.timeout,
+        },
+        "generation": dict(config.generation),
+        "system": config.system,
+        "missing": sorted(config.missing),
+        "no_answer": config.no_answer,
+        "draw": sorted(config.draw),
+        "inputs": dict(config.inputs),
+        "prompts": {str(urn): text for urn, text in config.prompts.items()},
+    }
+
+
 def rosters(ddi: object) -> Refused | None:
     """Why the harness can't run an instrument that has a roster, until qretools can
     record roster rows in a dataset.

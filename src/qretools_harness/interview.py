@@ -13,7 +13,7 @@ here: qretools publishes it (`qretools next --schema`), and only its fields are 
 import random
 import re
 from collections.abc import Callable, Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Any
 
 from qretools_harness.chat import Reply
@@ -92,7 +92,7 @@ def answer_rule(domain: Mapping[str, Any], missing: Sequence[Mapping[str, str]])
             rule += f" Or answer with one of these codes:\n{listed(missing)}"
         return f"{options}\n{rule}"
     if kind == "number":
-        rule = f"Answer with {number_rule(domain)}."
+        rule = f"Answer with {number_rule(domain)}, in digits only, not in words."
     elif kind == "text" and "maxLength" in domain:
         rule = f"Answer in your own words, in at most {domain['maxLength']} characters."
     else:
@@ -312,8 +312,8 @@ def interview(
             asked[key] = asked.get(key, 0) + 1
             messages.append({"role": "user", "content": prompt})
             reply = complete(messages, seed)
-            if isinstance(reply, Refused):
-                return Refused(f"{where(step)}: {reply.reason}")
+            if isinstance(reply, Refused):  # replace keeps its kind (Unreachable)
+                return replace(reply, reason=f"{where(step)}: {reply.reason}")
             messages.append({"role": "assistant", "content": reply.text})
             parsed = (
                 Failure("That answer is too long.")
@@ -333,6 +333,7 @@ def interview(
                     "finish_reason": reply.finish_reason,
                     "model": reply.model,
                     "fingerprint": reply.fingerprint,
+                    "server": reply.server,
                     "usage": dict(reply.usage),
                     "timings": reply.body.get("timings"),
                     "notes": step["notes"],

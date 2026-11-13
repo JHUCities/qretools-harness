@@ -96,7 +96,9 @@ def test_a_prompt_holds_the_question_and_only_the_offered_missing_codes() -> Non
 
 
 def test_a_number_prompt_gives_the_range() -> None:
-    assert "a whole number from 0 to 168." in prompt_of(ask(NUMBER), None, frozenset())
+    assert "a whole number from 0 to 168, in digits only" in prompt_of(
+        ask(NUMBER), None, frozenset()
+    )
     assert "D: Don't know" not in prompt_of(ask(NUMBER), None, frozenset())
 
 
@@ -352,3 +354,14 @@ def test_notes_go_into_the_traces_whatever_their_code() -> None:
         "how": "end",
         "notes": [note],
     }
+
+
+def test_a_number_question_asks_for_digits_first_and_again() -> None:
+    script = Script(ask(NUMBER), END)
+    model = Model("forty", "40")
+    values, _ = run(script, model)
+    assert values == [{"variable": "urn:v:hours", "value": 40}]
+    first, again = model.calls[0][0][-1], model.calls[1][0][-1]
+    assert "in digits only, not in words." in first["content"]
+    assert again["content"].startswith("That isn't a number.")
+    assert "in digits only, not in words." in again["content"]

@@ -1,5 +1,6 @@
 """The client against a local stand-in for a model server: no network."""
 
+import json
 import socket
 import threading
 from types import MappingProxyType
@@ -7,7 +8,14 @@ from types import MappingProxyType
 import pytest
 from fake import GOOD, Handler, Server
 
-from qretools_harness.chat import Reply, complete, reply_of
+from qretools_harness.chat import (
+    Reply,
+    Unreachable,
+    complete,
+    redacted,
+    reply_of,
+    server_info,
+)
 from qretools_harness.config import Model
 from qretools_harness.qretools import Refused
 
@@ -28,6 +36,7 @@ def test_the_request_and_the_reply(server: Server) -> None:
         fingerprint="b12110-cd959bae9",
         usage={"prompt_tokens": 13, "completion_tokens": 1},
         body=GOOD,
+        server="fake-server",
     )
     [(path, body)] = server.received
     assert path == "/v1/chat/completions"
@@ -116,3 +125,71 @@ def test_what_the_server_doesnt_say_is_none() -> None:
     assert isinstance(reply, Reply)
     assert (reply.model, reply.fingerprint, reply.finish_reason) == (None, None, None)
     assert reply.usage == {}
+
+
+def test_server_info_records_props_and_the_models_launch_arguments(
+    server: Server,
+) -> None:
+    model = model_at(server)
+    server.pages = {
+        "/props?model=asked-model": {"build_info": "b9", "n_ctx": 8192},
+        "/v1/models": {
+            "data": [
+                {"id": "other"},
+                {
+                    "id": "asked-model",
+                    "status": {
+                        "args": [
+                            "--ctx-size",
+                            "8192",
+                            "--api-key",
+                            "s3",
+                            "--hf-token=t",
+                        ],
+                        "preset": "ctx-size = 8192\napi-key = s3\n",
+                    },
+                },
+            ]
+        },
+    }
+    info = server_info(model)
+    assert info["server"] == "fake-server"
+    assert info["props"] == {"build_info": "b9", "n_ctx": 8192}
+    assert info["models"] == {
+        "id": "asked-model",
+        "status": {
+            "args": [
+                "--ctx-size",
+                "8192",
+                "--api-key",
+                "<redacted>",
+                "--hf-token=<redacted>",
+            ],
+            "preset": "ctx-size = 8192\napi-key = <redacted>\n",
+        },
+    }
+    assert "s3" not in json.dumps(info)
+
+
+def test_a_server_without_props_is_recorded_not_refused(server: Server) -> None:
+    info = server_info(model_at(server))
+    assert "404" in str(info["props"])
+    assert "unavailable" in str(info["models"])
+
+
+def test_a_server_that_isnt_there_is_unreachable() -> None:
+    listener = socket.create_server(("127.0.0.1", 0))
+    port = listener.getsockname()[1]
+    listener.close()
+    reply = complete(Model(f"http://127.0.0.1:{port}/v1", "m", 5), {}, MESSAGES)
+    assert isinstance(reply, Unreachable)
+
+
+def test_redaction_covers_keys_short_flags_and_one_line_presets() -> None:
+    assert redacted({"api_key": "x", "n_ctx": 8192}) == {
+        "api_key": "<redacted>",
+        "n_ctx": 8192,
+    }
+    assert redacted(["-hft", "t", "-c", "8192"]) == ["-hft", "<redacted>", "-c", "8192"]
+    assert redacted("api-key = x") == "api-key = <redacted>"
+    assert redacted("model = /m.gguf") == "model = /m.gguf"

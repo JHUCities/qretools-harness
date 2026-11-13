@@ -211,13 +211,38 @@ folder. Then it runs `qretools responses` in the run folder, which writes `datas
 | File | What it holds |
 |---|---|
 | `answers.csv` | One line for each value: `respondent,variable,row,value`. The variable is the URN of a DDI variable. Each respondent also has a `start` line and an `end` line, with the time in UTC. The respondents are `1`, `2`, and so on. |
-| `traces.jsonl` | One line for each event. The first line gives the versions of qretools and of the harness. Each call to the model gives the messages as sent, the reply, the model that the server served, the server's build, the token counts, the server's timings, the notes of qretools, and the value or the reason that the harness did not accept the reply. Each input gives its value and where the value came from. The end of each interview gives its notes. |
+| `traces.jsonl` | One line for each event. The first line records the run: see "What a run records". Each call to the model gives the messages as sent, the reply, the model that the server served, the server's software and build, the token counts, the server's timings, the notes of qretools, and the value or the reason that the harness did not accept the reply. Each input gives its value and where the value came from. The end of each interview gives its notes. A respondent who stopped gives the reason. |
 | `config.toml` | A copy of the config. |
 | `dataset.json` | Written by `qretools responses`. |
 
-The runtime of the dataset is the model that the server says it served, or `model.name`
-if the replies do not agree. The runtime version is the server's build
-(`system_fingerprint`), if every reply gives the same one.
+The runtime of the dataset is the server's software (the HTTP `Server` header, for
+example `llama.cpp`), or `unknown`. The runtime version is the server's build
+(`system_fingerprint`, or `build_info` of `/props`). The runtime is not the model: the
+model and its settings are in `config.toml`, which the dataset cites by its digest.
+
+### What a run records
+
+Each parameter that can change the result of a run is in a file that the dataset cites.
+The first line of `traces.jsonl` holds:
+
+- the command line, the number of respondents and the run folder;
+- the seed of each respondent;
+- the config as the run used it, after the defaults;
+- the instrument's path and its SHA-256 digest;
+- the qretools version, and the command that ran it (`npx` and the pin, or `node` and the
+  path of a development build);
+- the harness version;
+- what the server says about itself before the run: its software, and for llama.cpp,
+  `/props?model=<name>` (its build, the context size `n_ctx`, the sampler defaults and
+  the chat template) and the model's entry in `/v1/models` (its launch arguments). The
+  harness replaces the value of an argument whose name holds `key`, `token`, `secret` or
+  `password` with `<redacted>`. A server that does not give this information does not
+  stop the run: the traces say so.
+
+Each later line holds one call to the model, with its seed, its messages and its reply.
+
+**Caution:** the traces can hold local paths of the server's computer, for example the
+path of the model file.
 
 These are the rules of an interview:
 
@@ -231,31 +256,35 @@ These are the rules of an interview:
   llama.cpp gives the same answers to each respondent. Thus, two runs whose seeds are
   near each other can have the same respondents.
 - **The reply.** The harness accepts a code, the full label of an option (in any case),
-  or a code followed by a space or punctuation (`3. Retired`). For a number, the reply
-  must start with a number in the range, with no more decimals than the question allows.
+  or a code followed by a space or punctuation (`3. Retired`). For a number, the prompt
+  asks for digits only. The reply must start with a number in the range, with no more
+  decimals than the question allows. The harness does not read number words.
   For select-all, the reply gives the codes of the ticked options, or `none`. A reply that
   the server cut off (`max_tokens`) is not accepted.
 - **Retries.** If the harness does not accept a reply, or qretools does not accept the
   answer (`problem`), the harness asks the question again, with the reason. It asks a
   question at most 3 times. Then it records the `no_answer` code, and the traces say so.
-  If qretools does not accept the `no_answer` code, the run stops.
+  If qretools does not accept the `no_answer` code, that respondent stops.
 - **Notes.** The harness writes the notes of qretools into the traces. A note never
   changes the interview, also a note with a code that the harness does not know.
 - **Inputs.** If the route needs an input, the harness gives the value from `inputs`, or
   draws a value from `draw`. If the config gives neither, the harness sends "not known"
   (`null`), and says so on stderr and in the traces. A value that is not null goes into
   `answers.csv`, with the variable of the input.
-- **Errors.** If the model server or qretools fails during the interviews, the run stops.
-  The run folder then holds the config and the traces until the failure, and no
-  `answers.csv`. If `qretools responses` refuses, the command gives the command line to
-  run it again.
+- **Errors.** If the model server or qretools fails during an interview, for example
+  because the conversation is too long for the model's context, that respondent stops.
+  The traces give the reason, and the harness goes on with the next respondent. If the
+  server cannot be reached, the run stops. `answers.csv` and `dataset.json` hold the
+  respondents that finished, with their own numbers. Then the command exits with 1 and
+  names each respondent that stopped, and why. If no respondent finished, the command
+  writes no `answers.csv` and no dataset. If `qretools responses` refuses, the command
+  gives the command line to run it again.
 
 Limits:
 
 - The conversation grows with each question, and each re-ask makes it longer. If the
   conversation is larger than the context of the model, the server gives an error, and
-  the run stops. The run is all or nothing: the respondents that finished before the
-  error are not in a dataset either. The command prints the size of the largest prompt.
+  that respondent stops. The command prints the size of the largest prompt.
   With the GSS 2010 instrument, a context of 4,096 tokens is too small. Use 8,192 tokens
   (for llama.cpp, `-c 8192`).
 - For the same answers again, llama.cpp must use one slot (`-np 1`).

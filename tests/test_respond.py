@@ -3,14 +3,14 @@
 import json
 import os
 import shutil
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
 import pytest
 from fake import Fake
 
-from qretools_harness.chat import Reply
+from qretools_harness.chat import Reply, Unreachable
 from qretools_harness.cli import main, respond
 from qretools_harness.qretools import QRETOOLS, Completed, Refused, run_process
 
@@ -60,7 +60,7 @@ def qretools() -> Fake:
 
 
 class Model:
-    """Replies "2"; the served model and build are given per call, in turn."""
+    """Replies "2"; the server software and build are given per call, in turn."""
 
     def __init__(self, *served: tuple[str | None, str | None]) -> None:
         self.served = list(served)
@@ -68,8 +68,18 @@ class Model:
 
     def __call__(self, messages: Sequence[Mapping[str, str]], seed: int) -> Reply:
         self.seeds.append(seed)
-        model, build = self.served.pop(0) if self.served else ("served", "b1")
-        return Reply("2", "stop", model, build, {}, {})
+        server, build = self.served.pop(0) if self.served else ("llama.cpp", "b1")
+        return Reply("2", "stop", "served", build, {}, {}, server)
+
+
+SERVER: dict[str, object] = {
+    "server": "llama.cpp",
+    "props": {"build_info": "b0", "default_generation_settings": {"n_ctx": 8192}},
+}
+
+
+def info(model: object) -> dict[str, object]:
+    return SERVER
 
 
 def files(tmp_path: Path) -> Path:
@@ -91,7 +101,7 @@ def test_respond_writes_the_run_folder_and_makes_the_dataset(tmp_path: Path) -> 
     out = tmp_path / "runs" / "try-1"
     fake, model = qretools(), Model()
     times = iter(["T1", "T2", "T3", "T4"])
-    assert respond(config, 2, out, fake, model, lambda: next(times)) == 0
+    assert respond(config, 2, out, fake, model, lambda: next(times), info=info) == 0
     assert sorted(p.name for p in out.iterdir()) == [
         "answers.csv",
         "config.toml",
@@ -103,9 +113,6 @@ def test_respond_writes_the_run_folder_and_makes_the_dataset(tmp_path: Path) -> 
         "2,start,,T3\n2,urn:v:tenure,,2\n2,end,,T4\n"
     )
     assert (out / "config.toml").read_bytes() == config.read_bytes()
-    traces = [json.loads(t) for t in (out / "traces.jsonl").read_text().splitlines()]
-    assert traces[0]["kind"] == "start"
-    assert traces[0]["qretools"] == QRETOOLS.partition("@")[2]
     assert model.seeds == [10, 11]  # each respondent its own seed
     argv, cwd, _ = fake.calls[-1]
     assert cwd == out.resolve()
@@ -116,7 +123,7 @@ def test_respond_writes_the_run_folder_and_makes_the_dataset(tmp_path: Path) -> 
         str((tmp_path / "instrument.json").resolve()),
         "--synthetic",
         "--runtime",
-        "served",
+        "llama.cpp",
         "--runtime-version",
         "b1",
         "--file",
@@ -128,39 +135,134 @@ def test_respond_writes_the_run_folder_and_makes_the_dataset(tmp_path: Path) -> 
     ]
 
 
-def test_the_runtime_is_the_asked_model_when_the_server_doesnt_say_one(
+def test_the_first_trace_records_every_parameter_of_the_run(tmp_path: Path) -> None:
+    config, out = files(tmp_path), tmp_path / "r"
+    command = ["qretools-harness", "respond", str(config), "-n", "2", "-o", str(out)]
+    assert respond(config, 2, out, qretools(), Model(), info=info, command=command) == 0
+    start = json.loads((out / "traces.jsonl").read_text().splitlines()[0])
+    assert start["kind"] == "start"
+    assert start["command"] == command
+    assert start["respondents"] == 2
+    assert start["outdir"] == str(out.resolve())
+    assert start["seeds"] == [10, 11]
+    assert start["config"] == {
+        "instrument": str(tmp_path / "instrument.json"),
+        "model": {
+            "endpoint": "http://127.0.0.1:1/v1",
+            "name": "asked-model",
+            "timeout": 5,
+        },
+        "generation": {"seed": 10},
+        "system": "Answer.",
+        "missing": [],
+        "no_answer": "N",
+        "draw": [],
+        "inputs": {},
+        "prompts": {},
+    }
+    assert start["instrument"]["sha256"]
+    assert start["qretools"] == {
+        "version": QRETOOLS.partition("@")[2],
+        "command": ["npx", "-y", QRETOOLS],
+    }
+    assert start["server"] == SERVER
+
+
+@pytest.mark.parametrize(
+    ("served", "server", "runtime", "build"),
+    [
+        (
+            [("a", "b1"), ("b", "b1")],
+            {"server": "s", "props": {"build_info": "b0"}},
+            "s",
+            "b1",
+        ),
+        ([(None, None), (None, None)], {"props": {}}, "unknown", None),
+        (
+            [(None, "b1"), (None, "b2")],
+            {"props": {"build_info": "b0"}},
+            "unknown",
+            "b0",
+        ),
+    ],
+)
+def test_the_runtime_is_the_server_software_and_its_build(
     tmp_path: Path,
+    served: list[tuple[str | None, str | None]],
+    server: dict[str, object],
+    runtime: str,
+    build: str | None,
 ) -> None:
     fake = qretools()
-    model = Model(("a", "b1"), ("b", None))
-    assert respond(files(tmp_path), 2, tmp_path / "r", fake, model) == 0
+    model = Model(*served)
+    out = tmp_path / "r"
+    assert respond(files(tmp_path), 2, out, fake, model, info=lambda m: server) == 0
     argv, _, _ = fake.calls[-1]
-    assert argv[argv.index("--runtime") + 1] == "asked-model"
-    assert "--runtime-version" not in argv
+    assert argv[argv.index("--runtime") + 1] == runtime
+    if build:
+        assert argv[argv.index("--runtime-version") + 1] == build
+    else:
+        assert "--runtime-version" not in argv
 
 
-def test_a_failure_midway_leaves_the_traces_and_no_answers(
+def failing(
+    *bad: int, error: type[Refused] = Refused
+) -> Callable[..., Reply | Refused]:
+    """A model whose replies fail for the respondents (by seed - 9) in `bad`."""
+
+    def reply(messages: Sequence[Mapping[str, str]], seed: int) -> Reply | Refused:
+        if seed - 9 in bad:
+            return error("The model server answered 400. Context too long.")
+        return Model()(messages, seed)
+
+    return reply
+
+
+def test_a_respondent_who_fails_is_left_out_and_the_others_are_kept(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    calls = 0
-
-    def flaky(messages: Sequence[Mapping[str, str]], seed: int) -> Reply | Refused:
-        nonlocal calls
-        calls += 1
-        return Model()(messages, seed) if calls == 1 else Refused("Server down.")
-
     fake, out = qretools(), tmp_path / "r"
-    assert respond(files(tmp_path), 2, out, fake, flaky) == 1
+    assert respond(files(tmp_path), 3, out, fake, failing(2), info=info) == 1
+    answers = (out / "answers.csv").read_text()
+    assert [line.split(",")[0] for line in answers.splitlines()[1:]] == ["1"] * 3 + [
+        "3"
+    ] * 3
+    traces = [json.loads(t) for t in (out / "traces.jsonl").read_text().splitlines()]
+    stopped = [t for t in traces if t["kind"] == "stopped"]
+    assert [t["respondent"] for t in stopped] == ["2"]
+    assert "Context too long" in stopped[0]["why"]
+    assert any("responses" in argv for argv, _, _ in fake.calls)  # the dataset is made
+    err = capsys.readouterr().err
+    assert "respondent 2 stopped" in err and "Context too long" in err
+
+
+def test_no_dataset_when_no_respondent_finishes(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    fake, out = qretools(), tmp_path / "r"
+    assert respond(files(tmp_path), 2, out, fake, failing(1, 2), info=info) == 1
     assert sorted(p.name for p in out.iterdir()) == ["config.toml", "traces.jsonl"]
     assert not any("responses" in argv for argv, _, _ in fake.calls)
-    assert "respondent 2" in capsys.readouterr().err
+    assert "No respondent finished" in capsys.readouterr().err
+
+
+def test_a_server_that_cant_be_reached_stops_the_run(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    fake, out = qretools(), tmp_path / "r"
+    model = failing(2, 3, error=Unreachable)
+    assert respond(files(tmp_path), 3, out, fake, model, info=info) == 1
+    traces = [json.loads(t) for t in (out / "traces.jsonl").read_text().splitlines()]
+    assert [t["respondent"] for t in traces if t["kind"] == "stopped"] == ["2"]
+    assert "The run stopped" in capsys.readouterr().err
+    assert (out / "answers.csv").read_text().count(",start,") == 1
 
 
 def test_respond_refuses_a_folder_that_isnt_empty(tmp_path: Path) -> None:
     out = tmp_path / "run1"
     out.mkdir()
     (out / "answers.csv").touch()
-    assert respond(files(tmp_path), 1, out, Fake({}), Model()) == 1
+    assert respond(files(tmp_path), 1, out, Fake({}), Model(), info=info) == 1
 
 
 def test_respond_needs_a_seed(
@@ -168,7 +270,7 @@ def test_respond_needs_a_seed(
 ) -> None:
     config = files(tmp_path)
     config.write_text(CONFIG.replace("seed = 10", ""))
-    assert respond(config, 1, tmp_path / "r", Fake({}), Model()) == 1
+    assert respond(config, 1, tmp_path / "r", Fake({}), Model(), info=info) == 1
     assert "generation.seed" in capsys.readouterr().err
 
 
@@ -189,7 +291,7 @@ def test_respond_refuses_an_instrument_with_a_roster(
     config.write_text(
         CONFIG.replace("instrument.json", str(FIXTURES / "households.json"))
     )
-    assert respond(config, 1, tmp_path / "r", Fake({}), Model()) == 1
+    assert respond(config, 1, tmp_path / "r", Fake({}), Model(), info=info) == 1
     assert "rosters (members, vehicles)" in capsys.readouterr().err
     assert not (tmp_path / "r").exists()
 
@@ -226,7 +328,7 @@ def test_a_refused_dataset_says_how_to_make_it_again(
 ) -> None:
     fake = Fake({NEXT: next_of, RESPONSES: Completed(1)})
     out = tmp_path / "a run"
-    assert respond(files(tmp_path), 1, out, fake, Model()) == 1
+    assert respond(files(tmp_path), 1, out, fake, Model(), info=info) == 1
     assert (out / "answers.csv").exists()
     assert f"cd '{out.resolve()}' && npx -y {QRETOOLS} responses answers.csv" in (
         capsys.readouterr().err
