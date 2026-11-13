@@ -5,7 +5,7 @@ qretools-harness asks a language model the questions of a
 respondent. The answers are a synthetic dataset, keyed by the DDI variables of the
 instrument.
 
-This version has three commands: `build`, `check-config` and `respond`. The other parts come later.
+This version has two commands: `check-config` and `respond`. The other parts come later.
 The section "The design" tells what they do.
 
 ## The design
@@ -109,7 +109,6 @@ population. A model run has no weight: each answer counts once.
 
 | Part | Status |
 |---|---|
-| `qretools-harness build`: the DDI of a workspace | done |
 | `qretools next`: the next step of an interview, so that the interview follows the routing | done, in qretools |
 | `qretools responses`: the dataset and its provenance | done, in qretools |
 | `qretools dataset export`: a view of a dataset, at an access level | done, in qretools |
@@ -125,47 +124,13 @@ Not in this plan: `qretools compare`, and a sweep (many runs that a program make
 You need these tools:
 
 - [uv](https://docs.astral.sh/uv/).
-- [mise](https://mise.jdx.dev/), version 2026.9 or later.
-- A qretools workspace whose `mise.toml` pins `npm:qretools`.
+- [Node.js](https://nodejs.org/) 22 or later, with `npx`.
 
 The harness is not on PyPI. Install it from git:
 
 ```sh
 uv tool install git+https://github.com/JHUCities/qretools-harness
 ```
-
-## Build the DDI of a workspace
-
-1. Go to the workspace.
-2. Install the tools that the workspace pins:
-
-   ```sh
-   mise install
-   ```
-
-3. Build the DDI:
-
-   ```sh
-   qretools-harness build . -o dist
-   ```
-
-The command writes `dist/ddi.json`. If you do not give `-o`, the command writes into
-`dist` in the workspace.
-
-The command uses the qretools version that the workspace's `mise.toml` pins. It does not
-use a `qretools` command on your `PATH`. If mise cannot give the pinned version, the
-command stops and tells you why.
-
-The workspace must be a full git clone. qretools refuses a shallow clone, because it
-counts the versions of the items from the history.
-
-The exit codes are:
-
-| Code | Meaning |
-|---|---|
-| 0 | The command wrote the DDI. |
-| 1 | qretools or mise refused, or a step failed. |
-| 2 | The command line is not correct. |
 
 ## Write a config
 
@@ -212,8 +177,18 @@ or if the version of the question in the DDI is different. Then the question cha
 after you wrote its prompt. Read the question again, change the prompt if necessary, and
 write the new version in the URN.
 
-The command does not connect to the model server, and does not run qretools. The exit
-codes are the same as for `build`.
+It also refuses an instrument that has a roster, because qretools cannot record roster
+rows in a dataset yet.
+
+The command does not connect to the model server, and does not run qretools.
+
+The exit codes are:
+
+| Code | Meaning |
+|---|---|
+| 0 | The config matches the instrument. |
+| 1 | The command refused the config or the instrument. |
+| 2 | The command line is not correct. |
 
 ## Run a model through an instrument
 
@@ -290,11 +265,10 @@ Limits:
 
 ## The qretools version
 
-All commands except `build` run one qretools version: the version in `QRETOOLS` in
+The harness runs one qretools version: the version in `QRETOOLS` in
 [`src/qretools_harness/qretools.py`](src/qretools_harness/qretools.py), now
 `qretools@2.0.0-alpha.12`. The harness runs it with `npx -y`, so you need Node 22 or
-later and access to the npm registry the first time. `build` runs the version that the
-workspace pins.
+later and access to the npm registry the first time.
 
 ## Development
 
@@ -313,16 +287,9 @@ workspace pins.
    uv run pytest
    ```
 
-The tests do not run mise. One test builds a real workspace. It runs only if
-mise is installed and `QRETOOLS_WORKSPACE` gives the path of a workspace:
-
-```sh
-QRETOOLS_WORKSPACE=../qretools-gss uv run pytest
-```
-
 One test runs `respond` with the pinned qretools, through `npx`, and a stand-in for the
-model, against `tests/fixtures/households.json` (the households instrument of qretools'
-tests). It runs if `npx` is on `PATH`. It needs access to the npm registry the first time.
+model, against `tests/fixtures/flat.json` (the questions of qretools' households tests,
+with no roster). The other tests do not run qretools. It runs if `npx` is on `PATH`. It needs access to the npm registry the first time.
 
 One test sends a message to a model server. It runs only if
 `QRETOOLS_HARNESS_MODEL_URL` gives the base URL of the server.

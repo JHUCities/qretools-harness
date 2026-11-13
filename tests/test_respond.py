@@ -179,7 +179,19 @@ def test_the_number_of_respondents_is_one_or_more(n: str) -> None:
     assert exit.value.code == 2
 
 
-HOUSEHOLDS = Path(__file__).parent / "fixtures/households.json"
+FIXTURES = Path(__file__).parent / "fixtures"
+
+
+def test_respond_refuses_an_instrument_with_a_roster(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    config = files(tmp_path)
+    config.write_text(
+        CONFIG.replace("instrument.json", str(FIXTURES / "households.json"))
+    )
+    assert respond(config, 1, tmp_path / "r", Fake({}), Model()) == 1
+    assert "rosters (members, vehicles)" in capsys.readouterr().err
+    assert not (tmp_path / "r").exists()
 
 
 @pytest.mark.skipif(
@@ -187,9 +199,8 @@ HOUSEHOLDS = Path(__file__).parent / "fixtures/households.json"
     reason="needs npx (or QRETOOLS_HARNESS_QRETOOLS and node)",
 )
 def test_respond_with_real_qretools(tmp_path: Path) -> None:
-    """The households fixture (qretools' own, exported with `instrument export`), with
-    the pinned qretools and a model that always answers 2: it declines the interview,
-    so the route reaches the end before the roster, which a dataset can't hold yet.
+    """The flat fixture (qretools' households questions with no roster, exported with
+    `instrument export`), with the pinned qretools and a model that always answers 2:
     qretools takes every value, the drawn input's too, into a dataset."""
 
     def two(messages: Sequence[Mapping[str, str]], seed: int) -> Reply:
@@ -197,7 +208,7 @@ def test_respond_with_real_qretools(tmp_path: Path) -> None:
 
     config = tmp_path / "config.toml"
     config.write_text(
-        f'instrument = "{HOUSEHOLDS}"\n'
+        f'instrument = "{FIXTURES / "flat.json"}"\n'
         '[model]\nendpoint = "http://127.0.0.1:1/v1"\nname = "m"\ntimeout = 5\n'
         '[generation]\nseed = 1\n[run]\nsystem = "Answer."\nno_answer = "-9"\n'
         'draw = ["county"]\n'
@@ -207,7 +218,7 @@ def test_respond_with_real_qretools(tmp_path: Path) -> None:
     assert json.loads((out / "dataset.json").read_text())
     answers = (out / "answers.csv").read_text()
     assert answers.count("var-county:1,,") == 2
-    assert answers.count("var-consent:1,,2\n") == 2
+    assert answers.count("var-consent:1,,2\n") == 2  # 2 declines: the interview ends
 
 
 def test_a_refused_dataset_says_how_to_make_it_again(
