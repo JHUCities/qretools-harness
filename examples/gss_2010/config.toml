@@ -1,11 +1,12 @@
 # The config of a run with a model. Check it against the instrument's DDI with
 # `qretools-harness check-config config.toml`.
 
-# The instrument's DDI, as `qretools build` writes it. A relative path starts from the
-# folder of this file: here, the config is in a folder of a workspace, beside its dist/.
-# A tag reference (owner/repo@tag:name) isn't supported yet.
+# The instrument's DDI: the GSS 2010 instrument in the v15 release of qretools-gss, on
+# its site. It can also be a path to a DDI file that `qretools build` wrote; a relative
+# path starts from the folder of this file. A tag reference (owner/repo@tag:name) isn't
+# accepted: give the URL of the DDI in the release.
 # Write this key before the first [table]: after one, TOML puts it in that table.
-instrument = "../dist/instruments/gss_2010.json"
+instrument = "https://jhucities.github.io/qretools-gss/v15/instruments/gss_2010.json"
 
 [model]
 endpoint = "http://127.0.0.1:9931/v1"  # an OpenAI-compatible server: here, llama.cpp

@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Any, Protocol
 
 # The qretools that the harness calls. Change it only here.
-QRETOOLS = "qretools@2.0.0-alpha.12"
+QRETOOLS = "qretools@2.0.0-alpha.13"
 # For development only: the path of a qretools build (its JS file) to run in its place.
 OVERRIDE = "QRETOOLS_HARNESS_QRETOOLS"
 
@@ -105,9 +105,11 @@ def harness(cwd: Path) -> Qretools | Refused:
 
 
 def next_step(
-    q: Qretools, instrument: Path, state: object, run: Run = run_process
+    q: Qretools, instrument: Path | str, state: object, run: Run = run_process
 ) -> Mapping[str, Any] | Refused:
     """`qretools next`: the next step of an interview, as the JSON qretools replies.
+
+    `instrument` is a path or an https URL, which qretools reads at each call.
 
     Exit 1 means the state can't belong to the instrument: a bug here, or a DDI that
     changed during the run.

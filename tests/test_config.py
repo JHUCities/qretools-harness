@@ -5,7 +5,7 @@ import pytest
 from qretools_harness.config import Config, Urn, parse, stale
 from qretools_harness.qretools import Refused
 
-EXAMPLE = (Path(__file__).parent.parent / "examples/config.toml").read_text()
+EXAMPLE = (Path(__file__).parent.parent / "examples/gss_2010/config.toml").read_text()
 
 HERE = Path("/configs")
 
@@ -35,6 +35,9 @@ def refused(text: str) -> str:
 
 def test_the_example_parses() -> None:
     config = parsed(EXAMPLE)
+    assert config.instrument == (
+        "https://jhucities.github.io/qretools-gss/v15/instruments/gss_2010.json"
+    )
     assert config.model.endpoint == "http://127.0.0.1:9931/v1"
     assert config.generation["top_k"] == 40  # passed through unread
     assert config.prompts == {
@@ -69,10 +72,22 @@ def test_a_relative_instrument_starts_from_the_configs_folder() -> None:
 
 
 @pytest.mark.parametrize("ref", ["JHUCities/qretools-gss@v15:gss_2010", "o/r@v1"])
-def test_a_tag_reference_is_refused_until_qretools_next_reads_one(ref: str) -> None:
+def test_a_tag_reference_is_refused_with_the_way_to_use_its_release(ref: str) -> None:
     reason = refused(MINIMAL.replace('"i.json"', f'"{ref}"'))
     assert "tag reference" in reason
-    assert "qretools next" in reason
+    assert "https URL" in reason
+
+
+def test_an_https_instrument_stays_a_url() -> None:
+    url = "https://example.org/v1/instruments/x.json"
+    assert parsed(MINIMAL.replace('"i.json"', f'"{url}"')).instrument == url
+
+
+@pytest.mark.parametrize(
+    "url", ["http://example.org/x.json", "ftp://example.org/x.json", "https:///x.json"]
+)
+def test_an_instrument_url_must_be_https_with_a_host(url: str) -> None:
+    assert "https URL" in refused(MINIMAL.replace('"i.json"', f'"{url}"'))
 
 
 @pytest.mark.parametrize("value", ['"dist/ddi.yaml"', "1", '""'])

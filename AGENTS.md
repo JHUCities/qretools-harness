@@ -24,9 +24,10 @@ src/qretools_harness/
   qretools.py   the only module that runs the qretools CLI
   config.py     the config (TOML), and its check against the instrument's DDI
   interview.py  one interview: the prompts, the parsing of replies, the loop (pure)
-  chat.py       the only module that opens a network connection: the model server
+  chat.py       the only module that opens a network connection: the model server,
+                and an instrument's DDI by URL
 examples/
-  config.toml   an example config; the tests read it
+  gss_2010/     an example config (the tests read it) and its procedure
 tests/
   fake.py       stand-ins for running processes and for a model server
   conftest.py   the `server` fixture: a local model server
