@@ -1,8 +1,8 @@
 # qretools-harness
 
 qretools-harness asks a language model the questions of a
-[qretools](https://github.com/JHUCities/qretools) instrument. The model answers as a
-respondent. The harness then makes a dataset with qretools.
+[qretools](https://github.com/JHUCities/qretools) instrument. The model answers as one or
+more respondents. The harness then makes a dataset with qretools.
 
 ## The words
 
@@ -12,7 +12,8 @@ respondent. The harness then makes a dataset with qretools.
 | dataset | A DDI document. It holds the answers and their provenance. |
 | provenance | Where the answers came from: who answered, what asked the questions, when, and with which files. |
 | config | A TOML file. It holds the settings of a run. |
-| run | One time that the harness interviews the model. Each run has its own folder. |
+| run | One `qretools-harness respond` command. It interviews the model one time for each respondent. A run writes one folder. It makes one dataset from the respondents that finish. See "Errors". |
+| respondent | One interview. The model answers as one person, with its own seed and its own conversation. |
 | trace | One line in `traces.jsonl`: one call to the model, or one other event. |
 
 A dataset records two different facts:
@@ -66,7 +67,7 @@ to the npm registry.
 **Caution: do not put the run folder in a qretools workspace.** The folder must not
 exist, or it must be empty.
 
-5. Run the interviews:
+5. Start the run:
 
    ```sh
    qretools-harness respond config.toml -n 3 -o runs/try-1
@@ -128,7 +129,7 @@ For each respondent, the harness does these steps:
    `no_answer` code. If qretools
    does not accept that code, then the respondent stops.
 
-Then the harness writes the run folder, and runs `qretools responses`. That command
+Then the harness writes the run folder, and starts `qretools responses`. That command
 writes the dataset.
 
 | File | What it holds |
@@ -181,8 +182,8 @@ settings are in `config.toml`.
 
 ### Errors
 
-- If the model server or qretools fails during an interview, then that respondent stops. The harness goes on with the next
-  respondent.
+- If the model server or qretools fails during an interview, then that respondent
+  stops. The harness goes on with the next respondent.
 - If the harness cannot connect to the server, then the run stops.
 - The dataset holds only the respondents that finished. If one or more respondents
   stopped, then the command exits with 1 and gives the reasons.
