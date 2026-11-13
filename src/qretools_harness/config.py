@@ -47,6 +47,12 @@ class Config:
     mode: Literal["interview"]
     respondents: int
     system: str
+    missing: frozenset[
+        str
+    ]  # the missing codes the model may give, where a variable has them
+    no_answer: str  # the missing code recorded when the model gives no allowed answer
+    draw: frozenset[str]  # inputs drawn from their choices with the respondent's seed
+    inputs: Mapping[str, str | int | float]  # inputs given as written
     prompts: Mapping[Urn, str]
 
 
@@ -143,6 +149,24 @@ def _json(value: object, where: str) -> None:
         raise _Bad(f"`{where}` can't be sent as JSON; write it as text or a number.")
 
 
+def _codes(value: object, where: str) -> frozenset[str]:
+    if not isinstance(value, list) or not all(
+        isinstance(v, str) and v.strip() for v in value
+    ):
+        raise _Bad(f'`{where}` must be a list of text, for example ["a", "b"].')
+    return frozenset(value)
+
+
+def _inputs(value: object) -> Mapping[str, str | int | float]:
+    if not isinstance(value, dict):
+        raise _Bad("`inputs` must be a table.")
+    for key, given in value.items():
+        if isinstance(given, bool) or not isinstance(given, str | int | float):
+            raise _Bad(f"`inputs.{key}` must be text or a number.")
+        _json(given, f"inputs.{key}")
+    return MappingProxyType(dict(value))
+
+
 def _prompts(value: object) -> Mapping[Urn, str]:
     if not isinstance(value, dict):
         raise _Bad("`prompts` must be a table.")
@@ -163,13 +187,23 @@ def _prompts(value: object) -> Mapping[Urn, str]:
 def parse(text: str) -> Config | Refused:
     """A config from the text of a TOML file, or why it isn't one."""
     try:
-        top = _table(tomllib.loads(text), "", {"model", "generation", "run", "prompts"})
+        top = _table(
+            tomllib.loads(text), "", {"model", "generation", "run", "inputs", "prompts"}
+        )
         run = _table(
-            _required(top, "run", ""), "run", {"mode", "respondents", "system"}
+            _required(top, "run", ""),
+            "run",
+            {"mode", "respondents", "system", "missing", "no_answer", "draw"},
         )
         mode = _required(run, "mode", "run")
         if mode != "interview":
             raise _Bad('`run.mode` must be "interview", the only mode yet.')
+        inputs = _inputs(top.get("inputs", {}))
+        draw = _codes(run.get("draw", []), "run.draw")
+        both = sorted(draw & set(inputs))
+        if both:
+            names = ", ".join(f"`{n}`" for n in both)
+            raise _Bad(f"{names} is both drawn (`run.draw`) and given (`inputs`).")
         return Config(
             model=_model(_required(top, "model", "")),
             generation=_generation(top.get("generation", {})),
@@ -178,6 +212,10 @@ def parse(text: str) -> Config | Refused:
                 _required(run, "respondents", "run"), "run.respondents", 1
             ),
             system=_text(_required(run, "system", "run"), "run.system"),
+            missing=_codes(run.get("missing", []), "run.missing"),
+            no_answer=_text(_required(run, "no_answer", "run"), "run.no_answer"),
+            draw=draw,
+            inputs=inputs,
             prompts=_prompts(top.get("prompts", {})),
         )
     except tomllib.TOMLDecodeError as error:

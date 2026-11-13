@@ -1,59 +1,15 @@
 """The client against a local stand-in for a model server: no network."""
 
-import json
 import socket
 import threading
-from collections.abc import Iterator
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from types import MappingProxyType
 
 import pytest
+from fake import GOOD, Handler, Server
 
 from qretools_harness.chat import Reply, complete, reply_of
 from qretools_harness.config import Model
 from qretools_harness.qretools import Refused
-
-GOOD = {
-    "choices": [{"index": 0, "finish_reason": "length", "message": {"content": "Yes"}}],
-    "model": "served-model",
-    "system_fingerprint": "b12110-cd959bae9",
-    "usage": {"prompt_tokens": 13, "completion_tokens": 1},
-}
-
-
-class Server(ThreadingHTTPServer):
-    status = 200
-    body: bytes = json.dumps(GOOD).encode()
-    delay = 0.0
-    received: list[tuple[str, object]]
-
-
-class Handler(BaseHTTPRequestHandler):
-    server: Server
-
-    def do_POST(self) -> None:
-        length = int(self.headers["Content-Length"])
-        self.server.received.append((self.path, json.loads(self.rfile.read(length))))
-        if self.server.delay:
-            threading.Event().wait(self.server.delay)
-        self.send_response(self.server.status)
-        self.send_header("Content-Length", str(len(self.server.body)))
-        self.end_headers()
-        self.wfile.write(self.server.body)
-
-    def log_message(self, *args: object) -> None:
-        pass
-
-
-@pytest.fixture
-def server() -> Iterator[Server]:
-    s = Server(("127.0.0.1", 0), Handler)
-    s.received = []
-    thread = threading.Thread(target=s.serve_forever, daemon=True)
-    thread.start()
-    yield s
-    s.shutdown()
-    s.server_close()
 
 
 def model_at(s: Server, timeout: float = 5) -> Model:

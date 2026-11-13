@@ -16,11 +16,25 @@ top_k = 40
 
 [run]
 mode = "interview"  # the only mode yet: each answer stays in the conversation
-respondents = 20
+respondents = 20  # respondent i gets generation.seed + i - 1 as its seed
+# The missing codes the model may give, where a question has them. Without this key the
+# model gets no missing code: it must choose an answer.
+missing = ["D", "R"]
+# The missing code recorded when the model gives no allowed answer after two re-asks.
+no_answer = "N"
+# Inputs the route needs that no question asks: each drawn from its choices with the
+# respondent's seed. An input neither drawn nor in [inputs] is sent as not known (null).
+draw = ["self_employed", "earned_income", "born_in_us"]
 system = """
 You are a respondent in the General Social Survey. Answer each question as one adult
 living in the United States would. Give only your answer.
 """
+
+# Inputs given as written, by their names in the instrument.
+[inputs]
+last_year = 2009
+are = "are"
+do = "do"
 
 # Extra text for the model about one question, keyed by the question's URN with its
 # version. If the question changes, its version changes, and check-config refuses the

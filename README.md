@@ -5,7 +5,8 @@ qretools-harness asks a language model the questions of a
 respondent. The answers are a synthetic dataset, keyed by the DDI variables of the
 instrument.
 
-This version has two commands: `build` and `check-config`. The other parts come later.
+This version has three commands: `build`, `check-config` and `respond`. The other parts come
+later.
 The section "The design" tells what they do.
 
 ## The design
@@ -136,11 +137,11 @@ population. A model run has no weight: each answer counts once.
 |---|---|
 | `qretools-harness build`: the DDI of a workspace | done |
 | `qretools filter --access` | done, in qretools |
-| `qretools provenance`: the provenance of a run folder | in work, in qretools |
-| `qretools next`: the next question for a respondent, so that the interview follows the routing | in work, in qretools |
+| `qretools provenance`: the provenance of a run folder | done, in qretools; not released yet |
+| `qretools next`: the next question for a respondent, so that the interview follows the routing | done, in qretools; not released yet |
 | The config, its check against the DDI, and the client for the model server | done |
-| The prompts: the text that the model gets for each question | later |
-| `qretools-harness respond`: a model answers the instrument, as an interview | later |
+| The prompts: the text that the model gets for each question | done, in `respond` |
+| `qretools-harness respond`: a model answers the instrument, as an interview | done; it needs a qretools release with `next` and `provenance` |
 | Weights in the provenance | later |
 
 Not in this plan: `qretools compare`, and a sweep (many runs that a program makes and scores).
@@ -206,6 +207,10 @@ A config holds the settings of a run with a model. It is a TOML file.
 | `run` | `mode` | `"interview"`. This is the only mode now. |
 | `run` | `respondents` | The number of respondents. |
 | `run` | `system` | The system prompt. |
+| `run` | `missing` | The missing codes that the model can give, for example `["D", "R"]`. The harness offers a code only for a question that has it. If you do not give this key, the harness offers no missing code, and the model must choose an answer. |
+| `run` | `no_answer` | The missing code that the harness records if the model gives no allowed answer. Each question must have this code. |
+| `run` | `draw` | The names of inputs that the harness chooses at random from their choices, with the seed of the respondent. |
+| `inputs` | an input's name | The value of an input of the instrument, for each respondent. |
 | `prompts` | a question's URN | Extra text for the model about one question. The key is the URN of the question, with its version. |
 
 The config holds no fact that the DDI holds. The instrument, its questions and their
@@ -235,6 +240,74 @@ the URN.
 
 The command does not connect to the model server. The exit codes are the same as for
 `build`.
+
+## Run a model through an instrument
+
+1. Build the DDI of the workspace (see "Build the DDI of a workspace"). The DDI of each
+   instrument is `dist/instruments/<name>.json`.
+2. Write a config (see "Write a config"). Give `generation.seed` and `run.no_answer`.
+3. Make sure that the model server runs.
+4. Go to the workspace. The harness uses the qretools that `mise.toml` pins in the current
+   directory.
+5. Run the interviews:
+
+   ```sh
+   qretools-harness respond config.toml dist/instruments/gss_2010.json -o runs/try-1
+   ```
+
+The run folder must not exist, or must be empty. Its name must contain only letters,
+digits, `-` and `_`, because qretools makes the IDs of the provenance from it.
+
+The command writes these files:
+
+| File | What it holds |
+|---|---|
+| `answers.csv` | The answers, one line for each value: `respondent,variable,row,value`. The respondents are `1`, `2`, and so on. |
+| `traces.jsonl` | One line for each event. The first line gives the versions of qretools and of the harness. Each call to the model gives the messages as sent, the reply, the model that the server served, the token counts, the server's timings, and the value or the reason that the harness did not accept the reply. Each input gives its value and where the value came from. |
+| `config.toml` | A copy of the config. |
+| `ddi.json` | A copy of the instrument's DDI. |
+| `run.json` | The facts that no other file holds: the respondent is synthetic, the model that the server served and its build, and the start and end times (UTC). |
+| `provenance.json` | Written by `qretools provenance`. |
+
+These are the rules of an interview:
+
+- **The route.** The harness calls `qretools next` for each step. qretools decides the
+  next question and its text. The harness does not evaluate a condition.
+- **The prompt.** The prompt for a question has the statements since the last question,
+  the text of the question, its instructions, the text from `prompts` for that question,
+  the options with their codes, and how to answer. Each question and each answer stay in
+  the conversation.
+- **The seed.** Respondent *i* gets `generation.seed + i - 1`. With one seed for all,
+  llama.cpp gives the same answers to each respondent. Thus, two runs whose seeds are
+  near each other can have the same respondents: run 1 with seed 1 has the respondent 2
+  that run 2 with seed 2 has as respondent 1.
+- **The reply.** The harness accepts a code, the full label of an option (in any case),
+  or a code followed by a space or punctuation (`3. Retired`). For a number, the reply
+  must start with a number in the range, with no more decimals than the question allows.
+  For select-all, the reply gives the codes of the ticked options, or `none`. Each option
+  then gets its ticked or unticked code. A reply that the server cut off (`max_tokens`)
+  is not accepted.
+- **Retries.** If the harness does not accept a reply, or qretools does not accept the
+  answer (`problem`), the harness asks the question again, with the reason. It asks a
+  question at most 3 times. Then it records the `no_answer` code, and the traces say so.
+  If qretools did not accept the last answer, the trace also gives its reason. If
+  qretools does not accept the `no_answer` code, the run stops.
+- **Inputs.** If the route needs an input, the harness gives the value from `inputs`, or
+  draws a value from `draw`. If the config gives neither, the harness sends "not known"
+  (`null`). It says so on stderr and in the traces.
+- **Errors.** If the model server or qretools fails, the run stops. The run folder then
+  holds the traces until the failure, and no `answers.csv`.
+
+Limits:
+
+- The conversation grows with each question. If the conversation is larger than the
+  context of the model, the server gives an error, and the run stops. Give the server a
+  context that is larger than the largest prompt plus `max_tokens`. The command prints the
+  size of the largest prompt. With the GSS 2010 instrument, it was about 3,800 tokens, so
+  a context of 4,096 tokens is too small. Use 8,192 tokens (for llama.cpp, `-c 8192`).
+- The harness asks the options in their written order. It ignores `responseOrder`.
+- An unticked select-all option gets a line in `answers.csv` with its unticked code.
+  `qretools responses` writes no line for a blank cell of a Qualtrics export.
 
 ## Development
 
@@ -267,6 +340,19 @@ One test sends a message to a model server. It runs only if
 ```sh
 QRETOOLS_HARNESS_MODEL_URL=http://127.0.0.1:9931/v1 \
 QRETOOLS_HARNESS_MODEL=ggml-org/LFM3-Omni-2B-GGUF:Q8_0 uv run pytest
+```
+
+To use a qretools build that is not released, set `QRETOOLS_HARNESS_QRETOOLS` to the
+path of its JavaScript file, for example `packages/cli/dist/qretools.js` in a clone of
+qretools. The harness then runs that file with the `node` on `PATH`, and does not ask
+mise. The traces give the SHA-256 digest of the file in place of a version. This is for
+development only.
+
+One test runs `respond` with that build, against `tests/fixtures/households.json` (the
+households instrument of qretools' tests, from `qretools instrument export`):
+
+```sh
+QRETOOLS_HARNESS_QRETOOLS=../qretools/packages/cli/dist/qretools.js uv run pytest
 ```
 
 ## Licence

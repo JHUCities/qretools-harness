@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import pytest
 from fake import Fake, installed, pinned, working
 
 from qretools_harness.qretools import (
@@ -9,7 +10,9 @@ from qretools_harness.qretools import (
     Refused,
     binary_of,
     build,
+    next_step,
     pin_of,
+    provenance,
     resolve,
 )
 
@@ -90,3 +93,49 @@ def test_build_runs_the_pinned_binary_through_mise_exec(tmp_path: Path) -> None:
 def test_a_refused_build_is_refused(tmp_path: Path) -> None:
     q = Qretools(WS, Path("/bin/qretools"), "x")
     assert isinstance(build(q, Path("/out"), working(tmp_path, 1)), Refused)
+
+
+def test_a_development_build_is_run_with_node_and_named_by_its_digest(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    build_js = tmp_path / "qretools.js"
+    build_js.write_text("x")
+    monkeypatch.setenv("QRETOOLS_HARNESS_QRETOOLS", str(build_js))
+    q = resolve(WS, Fake({}))  # mise is never asked
+    assert isinstance(q, Qretools)
+    assert q.version == (
+        "development build"
+        " sha256:2d711642b726b04401627ca9fbac32f5c8530fb1903cc4db02258717921a4881"
+    )
+    assert q.argv("next") == ["node", str(build_js), "next"]
+
+
+def test_a_development_build_that_cant_be_read_is_refused(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("QRETOOLS_HARNESS_QRETOOLS", str(tmp_path / "none.js"))
+    assert isinstance(resolve(WS, Fake({})), Refused)
+
+
+Q = Qretools(WS, Path("/bin/qretools"), "x")
+
+
+def test_next_sends_the_state_on_stdin() -> None:
+    fake = Fake({"mise exec": Completed(0, '{"kind": "end"}')})
+    assert next_step(Q, Path("/i.json"), {"answers": []}, fake) == {"kind": "end"}
+    assert fake.calls[0][0][-3:] == ["next", "/i.json", "-"]
+    assert fake.stdins == ['{"answers": []}']
+
+
+@pytest.mark.parametrize(
+    "done",
+    [Completed(1, "", "unknown variable"), Completed(0, "[]"), Completed(0, "{")],
+)
+def test_next_that_fails_or_isnt_an_object_is_refused(done: Completed) -> None:
+    assert isinstance(next_step(Q, Path("/i.json"), {}, Fake({"mise": done})), Refused)
+
+
+def test_provenance_runs_on_the_folder() -> None:
+    fake = Fake({"mise exec": Completed(0)})
+    assert provenance(Q, Path("/r"), fake) == Path("/r/provenance.json")
+    assert isinstance(provenance(Q, Path("/r"), Fake({"mise": Completed(1)})), Refused)

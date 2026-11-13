@@ -8,13 +8,18 @@ pinned version is installed, and runs that file by its absolute path, through
 Every function returns a value. Nothing here raises for a refusal or a failed command.
 """
 
+import hashlib
 import json
+import os
 import subprocess
-from collections.abc import Callable, Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any, Protocol
 
 TOOL = "npm:qretools"
+# For development only: a qretools build to run in place of the pinned one.
+OVERRIDE = "QRETOOLS_HARNESS_QRETOOLS"
 
 
 @dataclass(frozen=True)
@@ -39,7 +44,13 @@ class Qretools:
 
     workspace: Path
     binary: Path
-    version: str
+    version: str  # mise's pin, or the digest of a development build
+    # What runs the binary: mise, so that node is the workspace's.
+    launcher: tuple[str, ...] = ("mise", "exec", "--")
+
+    def argv(self, *args: str) -> list[str]:
+        """The command line that runs qretools with `args`."""
+        return [*self.launcher, str(self.binary), *args]
 
 
 @dataclass(frozen=True)
@@ -47,16 +58,30 @@ class Built:
     ddi: Path
 
 
-# Runs argv in a directory. With capture false, output goes straight to the terminal.
-Run = Callable[[Sequence[str], Path, bool], Completed | Refused]
+class Run(Protocol):
+    """Runs argv in a directory. With capture false, output goes straight to the terminal.
+    `stdin` is the text the command reads, if any."""
+
+    def __call__(
+        self, argv: Sequence[str], cwd: Path, capture: bool, stdin: str | None = None
+    ) -> Completed | Refused: ...
 
 
-def run_process(argv: Sequence[str], cwd: Path, capture: bool) -> Completed | Refused:
+def run_process(
+    argv: Sequence[str], cwd: Path, capture: bool, stdin: str | None = None
+) -> Completed | Refused:
     try:
-        # A captured call gets no stdin, so a prompt from mise fails at once, never waits unseen.
-        stdin = subprocess.DEVNULL if capture else None
+        # A captured call without input gets no stdin, so a prompt from mise fails at
+        # once, never waits unseen.
+        no_input = subprocess.DEVNULL if capture else None
         done = subprocess.run(
-            argv, cwd=cwd, stdin=stdin, capture_output=capture, text=True, check=False
+            argv,
+            cwd=cwd,
+            input=stdin,
+            stdin=None if stdin is not None else no_input,
+            capture_output=capture,
+            text=True,
+            check=False,
         )
     except OSError as error:
         return Refused(
@@ -100,8 +125,23 @@ def failed(what: str, done: Completed) -> Refused:
     )
 
 
+def development(workspace: Path, path: str) -> Qretools | Refused:
+    """A qretools build (its JS file) named by OVERRIDE, run with the node on PATH. Its
+    version is its digest, because a development build has no release to name."""
+    binary = Path(path).resolve()
+    try:
+        digest = hashlib.sha256(binary.read_bytes()).hexdigest()
+    except OSError as error:
+        return Refused(f"{OVERRIDE} names {binary}, which can't be read: {error}.")
+    return Qretools(workspace, binary, f"development build sha256:{digest}", ("node",))
+
+
 def resolve(workspace: Path, run: Run = run_process) -> Qretools | Refused:
-    """The qretools that `workspace` pins, or why there is none."""
+    """The qretools that `workspace` pins, or why there is none. OVERRIDE, if set,
+    names a development build to use instead."""
+    override = os.environ.get(OVERRIDE)
+    if override:
+        return development(workspace, override)
     listed = run(["mise", "ls", "--current", "--json", TOOL], workspace, True)
     if isinstance(listed, Refused):
         return listed
@@ -127,10 +167,44 @@ def build(q: Qretools, outdir: Path, run: Run = run_process) -> Built | Refused:
 
     qretools prints its own findings and refusals; they go straight to the terminal.
     """
-    argv = ["mise", "exec", "--", str(q.binary), "build", ".", "-o", str(outdir)]
-    done = run(argv, q.workspace, False)
+    done = run(q.argv("build", ".", "-o", str(outdir)), q.workspace, False)
     if isinstance(done, Refused):
         return done
     if done.code != 0:
         return Refused(f"qretools build refused or failed (exit {done.code}).")
     return Built(outdir / "ddi.json")
+
+
+def next_step(
+    q: Qretools, instrument: Path, state: object, run: Run = run_process
+) -> Mapping[str, Any] | Refused:
+    """`qretools next`: the next step of an interview, as the JSON qretools replies.
+
+    Exit 1 means the state can't belong to the instrument: a bug here, or a DDI that
+    isn't the one the run began with.
+    """
+    done = run(
+        q.argv("next", str(instrument), "-"), q.workspace, True, json.dumps(state)
+    )
+    if isinstance(done, Refused):
+        return done
+    if done.code != 0:
+        return failed("qretools next", done)
+    try:
+        reply = json.loads(done.stdout)
+    except ValueError:
+        reply = None
+    if not isinstance(reply, dict):
+        return Refused("qretools next didn't reply with a JSON object.")
+    return reply
+
+
+def provenance(q: Qretools, folder: Path, run: Run = run_process) -> Path | Refused:
+    """`qretools provenance`: writes `folder/provenance.json`. qretools prints its own
+    findings; they go straight to the terminal."""
+    done = run(q.argv("provenance", str(folder)), q.workspace, False)
+    if isinstance(done, Refused):
+        return done
+    if done.code != 0:
+        return Refused(f"qretools provenance refused or failed (exit {done.code}).")
+    return folder / "provenance.json"

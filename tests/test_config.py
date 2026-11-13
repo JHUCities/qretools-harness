@@ -16,6 +16,7 @@ timeout = 5
 mode = "interview"
 respondents = 1
 system = "Answer."
+no_answer = "N"
 """
 
 
@@ -211,3 +212,38 @@ def test_an_item_that_isnt_an_object_is_skipped() -> None:
     problem = stale(with_prompts("urn:ddi:us.jhu:a:1"), {"QuestionItem": {"k": 1}})
     assert problem is not None
     assert "no question a" in problem.reason
+
+
+def test_the_run_fields_for_inputs_and_missing_codes() -> None:
+    config = parsed(EXAMPLE)
+    assert config.missing == {"D", "R"}
+    assert config.no_answer == "N"
+    assert "born_in_us" in config.draw
+    assert config.inputs["last_year"] == 2009
+    plain = parsed(MINIMAL)
+    assert (plain.missing, plain.draw, plain.inputs) == (frozenset(), frozenset(), {})
+
+
+@pytest.mark.parametrize(
+    ("extra", "where"),
+    [
+        ("[inputs]\nx = true", "inputs.x"),
+        ("[inputs]\nx = [1]", "inputs.x"),
+        ("[inputs]\nx = 2026-11-12", "inputs.x"),
+        ("[inputs]\nx = 1\n", "both drawn"),
+    ],
+)
+def test_bad_inputs_are_refused(extra: str, where: str) -> None:
+    text = MINIMAL.replace('no_answer = "N"', 'no_answer = "N"\ndraw = ["x"]')
+    if where != "both drawn":
+        text = MINIMAL
+    assert where in refused(text + extra)
+
+
+@pytest.mark.parametrize("line", ['missing = "D"', "missing = [1]", 'draw = [""]'])
+def test_lists_of_codes_must_be_text(line: str) -> None:
+    assert f"run.{line.split(' =')[0]}" in refused(MINIMAL + line)
+
+
+def test_no_answer_is_required() -> None:
+    assert "`run.no_answer`" in refused(MINIMAL.replace('no_answer = "N"', ""))
