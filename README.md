@@ -47,7 +47,7 @@ uv tool install git+https://github.com/JHUCities/qretools-harness
 
 The harness runs one qretools version: the value of `QRETOOLS` in
 [`src/qretools_harness/qretools.py`](src/qretools_harness/qretools.py), now
-`qretools@2.0.0-alpha.12`. A test checks that this README names the same version. The
+`qretools@2.0.0-alpha.13`. A test checks that this README names the same version. The
 harness runs it with `npx -y`. The first time, `npx` needs access
 to the npm registry.
 

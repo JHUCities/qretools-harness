@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Any, Protocol
 
 # The qretools that the harness calls. Change it only here.
-QRETOOLS = "qretools@2.0.0-alpha.12"
+QRETOOLS = "qretools@2.0.0-alpha.13"
 # For development only: the path of a qretools build (its JS file) to run in its place.
 OVERRIDE = "QRETOOLS_HARNESS_QRETOOLS"
 
