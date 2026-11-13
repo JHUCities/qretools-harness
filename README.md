@@ -5,7 +5,7 @@ qretools-harness asks a language model the questions of a
 respondent. The answers are a synthetic dataset, keyed by the DDI variables of the
 instrument.
 
-This version is the first part. It has one command, `build`. The other parts come later.
+This version has two commands: `build` and `check-config`. The other parts come later.
 The section "The design" tells what they do.
 
 ## The design
@@ -73,7 +73,7 @@ runs/<id>/
   ddi.json          a copy of the instrument's DDI
   <map>.json        for real data: the map from the source's columns to the DDI variables
   source.csv        for real data: the file that qretools read
-  config.yaml       for a model run: the config
+  config.toml       for a model run: the config
   traces.jsonl      for a model run: the traces
   run.json          only the facts that no other file holds
   provenance.json   written by qretools
@@ -138,7 +138,8 @@ population. A model run has no weight: each answer counts once.
 | `qretools filter --access` | done, in qretools |
 | `qretools provenance`: the provenance of a run folder | in work, in qretools |
 | `qretools next`: the next question for a respondent, so that the interview follows the routing | in work, in qretools |
-| The config, and the prompts | later |
+| The config, its check against the DDI, and the client for the model server | done |
+| The prompts: the text that the model gets for each question | later |
 | `qretools-harness respond`: a model answers the instrument, as an interview | later |
 | Weights in the provenance | later |
 
@@ -191,6 +192,50 @@ The exit codes are:
 | 1 | qretools or mise refused, or a step failed. |
 | 2 | The command line is not correct. |
 
+## Write a config
+
+A config holds the settings of a run with a model. It is a TOML file.
+[`examples/config.toml`](examples/config.toml) is an example.
+
+| Table | Key | What it holds |
+|---|---|---|
+| `model` | `endpoint` | The base URL of an OpenAI-compatible server, for example `http://127.0.0.1:9931/v1` for llama.cpp. |
+| `model` | `name` | The name of the model that the harness asks for. |
+| `model` | `timeout` | The maximum time for one reply, in seconds. |
+| `generation` | any key | The settings that the harness sends to the server, for example `temperature`, `max_tokens` and `seed`. The harness sends them without change. It refuses `model`, `messages`, `stream` and `n`, because it sets them itself. |
+| `run` | `mode` | `"interview"`. This is the only mode now. |
+| `run` | `respondents` | The number of respondents. |
+| `run` | `system` | The system prompt. |
+| `prompts` | a question's URN | Extra text for the model about one question. The key is the URN of the question, with its version. |
+
+The config holds no fact that the DDI holds. The instrument, its questions and their
+versions come from the DDI. The version in each URN of `prompts` is there to find a
+changed question.
+
+The config holds no API key. Do not write a key in it, because the run folder keeps a
+copy of the config.
+
+Unknown keys are refused, except in `generation`. Thus the harness does not find an
+incorrect name in `generation`, for example `temprature`.
+
+## Check a config
+
+1. Build the DDI of the instrument (see "Build the DDI of a workspace").
+2. Check the config against the DDI:
+
+   ```sh
+   qretools-harness check-config config.toml dist/ddi.json
+   ```
+
+The command refuses the config if a key or a value is not correct. It refuses a DDI file
+that holds no question. It also refuses the config if a URN in `prompts` is not a question in the DDI, or if the version of the
+question in the DDI is different. Then the question changed after you wrote its prompt.
+Read the question again, change the prompt if necessary, and write the new version in
+the URN.
+
+The command does not connect to the model server. The exit codes are the same as for
+`build`.
+
 ## Development
 
 1. Install the dependencies:
@@ -213,6 +258,15 @@ mise is installed and `QRETOOLS_WORKSPACE` gives the path of a workspace:
 
 ```sh
 QRETOOLS_WORKSPACE=../qretools-gss uv run pytest
+```
+
+One test sends a message to a model server. It runs only if
+`QRETOOLS_HARNESS_MODEL_URL` gives the base URL of the server.
+`QRETOOLS_HARNESS_MODEL` gives the name of the model:
+
+```sh
+QRETOOLS_HARNESS_MODEL_URL=http://127.0.0.1:9931/v1 \
+QRETOOLS_HARNESS_MODEL=ggml-org/LFM3-Omni-2B-GGUF:Q8_0 uv run pytest
 ```
 
 ## Licence

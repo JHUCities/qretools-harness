@@ -1,0 +1,29 @@
+# The config of a run with a model. Check it against the instrument's DDI with
+# `qretools-harness check-config examples/config.toml dist/ddi.json`.
+
+[model]
+endpoint = "http://127.0.0.1:9931/v1"  # an OpenAI-compatible server: here, llama.cpp
+name = "ggml-org/LFM3-Omni-2B-GGUF:Q8_0"
+timeout = 600  # seconds for one reply; a local model can be slow
+
+# Sent to the server as written. The harness checks only the types of temperature,
+# max_tokens and seed, and refuses model, messages, stream and n, which it sets itself.
+[generation]
+temperature = 0.7
+max_tokens = 256
+seed = 1
+top_k = 40
+
+[run]
+mode = "interview"  # the only mode yet: each answer stays in the conversation
+respondents = 20
+system = """
+You are a respondent in the General Social Survey. Answer each question as one adult
+living in the United States would. Give only your answer.
+"""
+
+# Extra text for the model about one question, keyed by the question's URN with its
+# version. If the question changes, its version changes, and check-config refuses the
+# prompt until you review it.
+[prompts]
+"urn:ddi:us.jhu:agekdbrn:6" = "Answer with a whole number of years."

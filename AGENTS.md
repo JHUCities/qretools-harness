@@ -22,6 +22,10 @@ qretools owns the survey. This package only orchestrates it.
 src/qretools_harness/
   cli.py        the commands (argparse); exit 0 done, 1 refused or failed, 2 usage
   qretools.py   the only module that runs the qretools CLI
+  config.py     the config (TOML), and its check against the instrument's DDI
+  chat.py       the only module that opens a network connection: the model server
+examples/
+  config.toml   an example config; the tests read it
 tests/
   fake.py       a stand-in for running processes
   test_*.py     unit tests; test_integration.py builds a real workspace when asked
@@ -45,6 +49,16 @@ This is different from the workspace CI, which runs `mise exec -- which qretools
 if the result is not inside `mise where npm:qretools`. The harness does not need that
 check, because it never looks for qretools on `PATH`. A global install therefore cannot
 stop the harness. Do not change the harness to match the CI.
+
+## The config
+
+The config is TOML, because the standard library reads TOML (`tomllib`) and the harness
+has no runtime dependencies. The config holds only facts about the model. A fact that the
+DDI holds is not a config field.
+
+The interview loop must not send the same seed for each respondent. With the same seed
+and the same messages, llama.cpp gives the same reply, so all respondents would be the
+same. Derive one seed for each respondent from the config's seed.
 
 ## Style
 
