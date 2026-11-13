@@ -5,7 +5,7 @@ qretools-harness asks a language model the questions of a
 respondent. The answers are a synthetic dataset, keyed by the DDI variables of the
 instrument.
 
-This version has one command: `check-config`. The other parts come later.
+This version has two commands: `check-config` and `respond`. The other parts come later.
 The section "The design" tells what they do.
 
 ## The design
@@ -54,61 +54,37 @@ qretools commands. The README of the workspace gives the procedure.
 | Item | qretools | The harness |
 |---|---|---|
 | The questions, the order, the routing | yes | It reads them from the DDI. |
-| Access levels (who can see an answer) | yes | It uses `qretools filter`. |
+| Access levels (who can see an answer) | yes | It does not filter. `qretools dataset export --access` writes a view. |
 | The model and its settings | no | yes, in the config |
 | The extra text for each question, for the model | no | yes, in the config |
 | The prompt that the model gets | no | It makes the prompt from the DDI and the config. It keeps each prompt in the traces. |
-| The provenance of a dataset | yes: `qretools provenance` writes it | It gives the run folder to qretools. |
+| The dataset and its provenance | yes: `qretools responses` writes them | It gives the answers, the traces and the config to qretools. |
 
 The DDI of the instrument never changes after a run. A run adds new DDI items that refer to
 the instrument.
 
 ### The run folder
 
-Each dataset has one folder:
+Each run with a model has one folder. The harness writes it, outside any workspace:
 
 ```
 runs/<id>/
-  answers.csv       the dataset
-  ddi.json          a copy of the instrument's DDI
-  <map>.json        for real data: the map from the source's columns to the DDI variables
-  source.csv        for real data: the file that qretools read
-  config.yaml       for a model run: the config
-  traces.jsonl      for a model run: the traces
-  run.json          only the facts that no other file holds
-  provenance.json   written by qretools
+  answers.csv     the answers, and the start and end time of each interview
+  traces.jsonl    the traces
+  config.toml     a copy of the config
+  dataset.json    the dataset, written by `qretools responses`
 ```
 
-**Caution: do not commit or publish a folder that holds real answers.** A Qualtrics export
-can hold IP addresses. Only `provenance.json` is safe to publish. Git ignores `runs/`.
-
-### How qretools writes the provenance
+`dataset.json` is a DDI document. It holds each value, the time of each interview, and the
+provenance: the instrument and its digest, the dates, that the answers are synthetic, the
+runtime, and the SHA-256 digest of the traces and of the config.
 
 The rule is: **derive, do not declare.** qretools reads each fact from a file if it can. The
-harness writes a fact in `run.json` only if no file holds it.
+dates come from the times in `answers.csv`. The harness gives on the command line only
+the facts that no file holds: that the answers are synthetic, and the runtime.
 
-qretools reads these facts from the files:
-
-- the instrument, its version and its digest, from `ddi.json`;
-- the kind of dataset, from a field in the map, or from `run.json` for a model run;
-- for Qualtrics: how the questions were asked, who answered, and the dates, from the export;
-- the SHA-256 digest of each file;
-- the variables in the dataset, and the variables that are not in it.
-
-The harness writes only these facts in `run.json`:
-
-- that the respondent is a model;
-- the start and end times, if no file holds them;
-- for a data file: how the publisher asked the questions, and who answered;
-- the name and version of the runtime, and what the runtime reported;
-- the access level.
-
-qretools checks the facts. It does not trust them:
-
-- For real data, qretools reads the source again. The result must be the same as
-  `answers.csv`, byte for byte.
-- It checks that the access level removes nothing more from the dataset.
-- It checks the DDI that it writes against the official DDI schema.
+**Caution: do not commit or publish a dataset of real answers.** Git ignores `runs/`.
+`qretools dataset export --provenance` writes a view without the values.
 
 ### Weights
 
@@ -121,12 +97,11 @@ population. A model run has no weight: each answer counts once.
 ### Rules that protect the results
 
 1. **A dataset holds one kind of respondent.** If a source holds people and test responses,
-   the person makes one run folder for each kind. `qretools provenance` refuses a dataset
-   that holds two kinds.
+   the person makes one dataset for each kind.
 2. **A synthetic dataset always says that it is synthetic.** It can have the same columns as
    real data. Its provenance never hides what made it.
-3. **Each dataset goes through the access filter** before analysis. The filter refuses to
-   write a result if a restricted answer stays in it.
+3. **Each dataset goes through the access filter** before analysis:
+   `qretools dataset export --access` writes a view at one access level.
 4. **Record each run.** If you change the config and run again, each run has its own folder,
    with its own config and its own provenance.
 
@@ -134,11 +109,12 @@ population. A model run has no weight: each answer counts once.
 
 | Part | Status |
 |---|---|
-| `qretools filter --access` | done, in qretools |
-| `qretools provenance`: the provenance of a run folder | in work, in qretools |
-| `qretools next`: the next question for a respondent, so that the interview follows the routing | in work, in qretools |
+| `qretools next`: the next step of an interview, so that the interview follows the routing | done, in qretools |
+| `qretools responses`: the dataset and its provenance | done, in qretools |
+| `qretools dataset export`: a view of a dataset, at an access level | done, in qretools |
 | The config, its check against the DDI, and the client for the model server | done |
-| `qretools-harness respond`: a model answers the instrument, as an interview | later |
+| `qretools-harness respond`: a model answers the instrument, as an interview | done |
+| An instrument given as a tag reference | later: `qretools next` must read one first |
 | Weights in the provenance | later |
 
 Not in this plan: `qretools compare`, and a sweep (many runs that a program makes and scores).
@@ -214,6 +190,108 @@ The exit codes are:
 | 1 | The command refused the config or the instrument. |
 | 2 | The command line is not correct. |
 
+## Run a model through an instrument
+
+1. Build the DDI of the instrument with qretools. The DDI of each instrument is
+   `dist/instruments/<name>.json` in the workspace.
+2. Write a config (see "Write a config"). Give `generation.seed` and `run.no_answer`.
+3. Make sure that the model server runs.
+4. Run the interviews:
+
+   ```sh
+   qretools-harness respond config.toml -n 3 -o runs/try-1
+   ```
+
+`-n` is the number of respondents. The run folder must not exist, or must be empty. Do not
+put it in a workspace.
+
+The command writes `answers.csv`, `traces.jsonl` and a copy of the config into the run
+folder. Then it runs `qretools responses` in the run folder, which writes `dataset.json`.
+
+| File | What it holds |
+|---|---|
+| `answers.csv` | One line for each value: `respondent,variable,row,value`. The variable is the URN of a DDI variable. Each respondent also has a `start` line and an `end` line, with the time in UTC. The respondents are `1`, `2`, and so on. |
+| `traces.jsonl` | One line for each event. The first line records the run: see "What a run records". Each call to the model gives the messages as sent, the reply, the model that the server served, the server's software and build, the token counts, the server's timings, the notes of qretools, and the value or the reason that the harness did not accept the reply. Each input gives its value and where the value came from. The end of each interview gives its notes. A respondent who stopped gives the reason. |
+| `config.toml` | A copy of the config. |
+| `dataset.json` | Written by `qretools responses`. |
+
+The runtime of the dataset is the server's software (the HTTP `Server` header, for
+example `llama.cpp`), or `unknown`. The runtime version is the server's build
+(`system_fingerprint`, or `build_info` of `/props`). The runtime is not the model: the
+model and its settings are in `config.toml`, which the dataset cites by its digest.
+
+### What a run records
+
+Each parameter that can change the result of a run is in a file that the dataset cites.
+The first line of `traces.jsonl` holds:
+
+- the command line, the number of respondents and the run folder;
+- the seed of each respondent;
+- the config as the run used it, after the defaults;
+- the instrument's path and its SHA-256 digest;
+- the qretools version, and the command that ran it (`npx` and the pin, or `node` and the
+  path of a development build);
+- the harness version;
+- what the server says about itself before the run: its software, and for llama.cpp,
+  `/props?model=<name>` (its build, the context size `n_ctx`, the sampler defaults and
+  the chat template) and the model's entry in `/v1/models` (its launch arguments). The
+  harness replaces the value of an argument whose name holds `key`, `token`, `secret` or
+  `password` with `<redacted>`. A server that does not give this information does not
+  stop the run: the traces say so.
+
+Each later line holds one call to the model, with its seed, its messages and its reply.
+
+**Caution:** the traces can hold local paths of the server's computer, for example the
+path of the model file.
+
+These are the rules of an interview:
+
+- **The route.** The harness calls `qretools next` for each step. qretools decides the
+  next question and its text. The harness does not evaluate a condition.
+- **The prompt.** The prompt for a question has the statements since the last question,
+  the text of the question, its instructions, the text from `prompts` for that question,
+  the options with their codes, and how to answer. Each question and each answer stay in
+  the conversation.
+- **The seed.** Respondent *i* gets `generation.seed + i - 1`. With one seed for all,
+  llama.cpp gives the same answers to each respondent. Thus, two runs whose seeds are
+  near each other can have the same respondents.
+- **The reply.** The harness accepts a code, the full label of an option (in any case),
+  or a code followed by a space or punctuation (`3. Retired`). For a number, the prompt
+  asks for digits only. The reply must start with a number in the range, with no more
+  decimals than the question allows. The harness does not read number words.
+  For select-all, the reply gives the codes of the ticked options, or `none`. A reply that
+  the server cut off (`max_tokens`) is not accepted.
+- **Retries.** If the harness does not accept a reply, or qretools does not accept the
+  answer (`problem`), the harness asks the question again, with the reason. It asks a
+  question at most 3 times. Then it records the `no_answer` code, and the traces say so.
+  If qretools does not accept the `no_answer` code, that respondent stops.
+- **Notes.** The harness writes the notes of qretools into the traces. A note never
+  changes the interview, also a note with a code that the harness does not know.
+- **Inputs.** If the route needs an input, the harness gives the value from `inputs`, or
+  draws a value from `draw`. If the config gives neither, the harness sends "not known"
+  (`null`), and says so on stderr and in the traces. A value that is not null goes into
+  `answers.csv`, with the variable of the input.
+- **Errors.** If the model server or qretools fails during an interview, for example
+  because the conversation is too long for the model's context, that respondent stops.
+  The traces give the reason, and the harness goes on with the next respondent. If the
+  server cannot be reached, the run stops. `answers.csv` and `dataset.json` hold the
+  respondents that finished, with their own numbers. Then the command exits with 1 and
+  names each respondent that stopped, and why. If no respondent finished, the command
+  writes no `answers.csv` and no dataset. If `qretools responses` refuses, the command
+  gives the command line to run it again.
+
+Limits:
+
+- The conversation grows with each question, and each re-ask makes it longer. If the
+  conversation is larger than the context of the model, the server gives an error, and
+  that respondent stops. The command prints the size of the largest prompt.
+  With the GSS 2010 instrument, a context of 4,096 tokens is too small. Use 8,192 tokens
+  (for llama.cpp, `-c 8192`).
+- For the same answers again, llama.cpp must use one slot (`-np 1`).
+- The harness asks the options in their written order. It ignores `responseOrder`.
+- `qretools responses` cannot hold an answer in a roster row yet. It refuses such a run.
+- Each step runs `npx`, which adds a fraction of a second to each step.
+
 ## The qretools version
 
 The harness runs one qretools version: the version in `QRETOOLS` in
@@ -238,7 +316,9 @@ later and access to the npm registry the first time.
    uv run pytest
    ```
 
-The tests do not run qretools.
+One test runs `respond` with the pinned qretools, through `npx`, and a stand-in for the
+model, against `tests/fixtures/flat.json` (the questions of qretools' households tests,
+with no roster). The other tests do not run qretools. It runs if `npx` is on `PATH`. It needs access to the npm registry the first time.
 
 One test sends a message to a model server. It runs only if
 `QRETOOLS_HARNESS_MODEL_URL` gives the base URL of the server.

@@ -8,12 +8,13 @@ Every function returns a value. Nothing here raises for a refusal or a failed co
 """
 
 import hashlib
+import json
 import os
 import subprocess
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Protocol
+from typing import Any, Protocol
 
 # The qretools that the harness calls. Change it only here.
 QRETOOLS = "qretools@2.0.0-alpha.12"
@@ -82,6 +83,13 @@ def run_process(
     return Completed(done.returncode, done.stdout or "", done.stderr or "")
 
 
+def failed(what: str, done: Completed) -> Refused:
+    detail = done.stderr.strip()
+    return Refused(
+        f"{what} failed (exit {done.code})." + (f"\n{detail}" if detail else "")
+    )
+
+
 def harness(cwd: Path) -> Qretools | Refused:
     """QRETOOLS through npx, run in `cwd`; or the development build OVERRIDE names."""
     override = os.environ.get(OVERRIDE)
@@ -94,3 +102,38 @@ def harness(cwd: Path) -> Qretools | Refused:
         return Refused(f"{OVERRIDE} names {binary}, which can't be read: {error}.")
     # A development build has no release to name, so its digest is its version.
     return Qretools(cwd, ("node", str(binary)), f"development build sha256:{digest}")
+
+
+def next_step(
+    q: Qretools, instrument: Path, state: object, run: Run = run_process
+) -> Mapping[str, Any] | Refused:
+    """`qretools next`: the next step of an interview, as the JSON qretools replies.
+
+    Exit 1 means the state can't belong to the instrument: a bug here, or a DDI that
+    changed during the run.
+    """
+    done = run(q.argv("next", str(instrument), "-"), q.cwd, True, json.dumps(state))
+    if isinstance(done, Refused):
+        return done
+    if done.code != 0:
+        return failed("qretools next", done)
+    try:
+        reply = json.loads(done.stdout)
+    except ValueError:
+        reply = None
+    if not isinstance(reply, dict):
+        return Refused("qretools next didn't reply with a JSON object.")
+    return reply
+
+
+def responses(
+    q: Qretools, args: Sequence[str], run: Run = run_process
+) -> Refused | None:
+    """`qretools responses` with `args`, in the run folder. qretools prints its own
+    findings; they go straight to the terminal."""
+    done = run(q.argv("responses", *args), q.cwd, False)
+    if isinstance(done, Refused):
+        return done
+    if done.code != 0:
+        return Refused(f"qretools responses refused or failed (exit {done.code}).")
+    return None
