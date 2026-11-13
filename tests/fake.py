@@ -43,10 +43,21 @@ class Server(ThreadingHTTPServer):
     body: bytes = json.dumps(GOOD).encode()
     delay = 0.0
     received: list[tuple[str, object]]
+    pages: dict[str, object]  # what a GET of each path (with its query) answers
 
 
 class Handler(BaseHTTPRequestHandler):
     server: Server
+    server_version = "fake-server"
+    sys_version = ""
+
+    def do_GET(self) -> None:
+        page = self.server.pages.get(self.path)
+        body = json.dumps(page).encode()
+        self.send_response(404 if page is None else 200)
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
 
     def do_POST(self) -> None:
         length = int(self.headers["Content-Length"])

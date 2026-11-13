@@ -1,0 +1,2154 @@
+{
+  "ManagedMissingValuesRepresentation": {
+    "org.example.households:instrument-flat.missing:1": {
+      "URN": "urn:ddi:org.example.households:instrument-flat.missing:1",
+      "Agency": "org.example.households",
+      "ID": "instrument-flat.missing",
+      "Version": "1",
+      "MissingCodeRepresentation": [
+        {
+          "CodeListReference": {
+            "$type": "CodeList",
+            "value": [
+              "org.example.households",
+              "instrument-flat.missing-codes",
+              "1"
+            ]
+          }
+        }
+      ]
+    },
+    "org.example.households:missing-values:1": {
+      "URN": "urn:ddi:org.example.households:missing-values:1",
+      "Agency": "org.example.households",
+      "ID": "missing-values",
+      "Version": "1",
+      "MissingCodeRepresentation": [
+        {
+          "CodeListReference": {
+            "$type": "CodeList",
+            "value": [
+              "org.example.households",
+              "missing-values.codes",
+              "1"
+            ]
+          }
+        }
+      ]
+    }
+  },
+  "CodeList": {
+    "org.example.households:instrument-flat.missing-codes:1": {
+      "URN": "urn:ddi:org.example.households:instrument-flat.missing-codes:1",
+      "Agency": "org.example.households",
+      "ID": "instrument-flat.missing-codes",
+      "Version": "1",
+      "Code": [
+        {
+          "URN": "urn:ddi:org.example.households:instrument-flat.missing-code-0:1",
+          "Agency": "org.example.households",
+          "ID": "instrument-flat.missing-code-0",
+          "Version": "1",
+          "Value": {
+            "StringValue": "-8"
+          },
+          "CategoryReference": {
+            "$type": "Category",
+            "value": [
+              "org.example.households",
+              "instrument-flat.missing-cat-0",
+              "1"
+            ]
+          }
+        },
+        {
+          "URN": "urn:ddi:org.example.households:instrument-flat.missing-code-1:1",
+          "Agency": "org.example.households",
+          "ID": "instrument-flat.missing-code-1",
+          "Version": "1",
+          "Value": {
+            "StringValue": "-9"
+          },
+          "CategoryReference": {
+            "$type": "Category",
+            "value": [
+              "org.example.households",
+              "instrument-flat.missing-cat-1",
+              "1"
+            ]
+          }
+        }
+      ]
+    },
+    "org.example.households:instrument-flat.input-county-codes:1": {
+      "URN": "urn:ddi:org.example.households:instrument-flat.input-county-codes:1",
+      "Agency": "org.example.households",
+      "ID": "instrument-flat.input-county-codes",
+      "Version": "1",
+      "CodeListName": [
+        {
+          "String": [
+            {
+              "MultilingualStringValue": {
+                "LanguageTag": "en",
+                "Value": "county"
+              }
+            }
+          ]
+        }
+      ],
+      "Code": [
+        {
+          "URN": "urn:ddi:org.example.households:instrument-flat.input-county-code-0:1",
+          "Agency": "org.example.households",
+          "ID": "instrument-flat.input-county-code-0",
+          "Version": "1",
+          "Value": {
+            "StringValue": "1"
+          },
+          "CategoryReference": {
+            "$type": "Category",
+            "value": [
+              "org.example.households",
+              "instrument-flat.input-county-cat-0",
+              "1"
+            ]
+          }
+        },
+        {
+          "URN": "urn:ddi:org.example.households:instrument-flat.input-county-code-1:1",
+          "Agency": "org.example.households",
+          "ID": "instrument-flat.input-county-code-1",
+          "Version": "1",
+          "Value": {
+            "StringValue": "2"
+          },
+          "CategoryReference": {
+            "$type": "Category",
+            "value": [
+              "org.example.households",
+              "instrument-flat.input-county-cat-1",
+              "1"
+            ]
+          }
+        }
+      ]
+    },
+    "org.example.households:instrument-flat.branch-kinds:1": {
+      "URN": "urn:ddi:org.example.households:instrument-flat.branch-kinds:1",
+      "Agency": "org.example.households",
+      "ID": "instrument-flat.branch-kinds",
+      "Version": "1",
+      "Label": [
+        {
+          "Content": [
+            {
+              "MultilingualStringValue": {
+                "LanguageTag": "en",
+                "Value": "Kinds of branch"
+              }
+            }
+          ]
+        }
+      ],
+      "Code": [
+        {
+          "URN": "urn:ddi:org.example.households:instrument-flat.branch-kind-code-0:1",
+          "Agency": "org.example.households",
+          "ID": "instrument-flat.branch-kind-code-0",
+          "Version": "1",
+          "Value": {
+            "StringValue": "info"
+          },
+          "CategoryReference": {
+            "$type": "Category",
+            "value": [
+              "org.example.households",
+              "instrument-flat.branch-kind-cat-0",
+              "1"
+            ]
+          }
+        },
+        {
+          "URN": "urn:ddi:org.example.households:instrument-flat.branch-kind-code-1:1",
+          "Agency": "org.example.households",
+          "ID": "instrument-flat.branch-kind-code-1",
+          "Version": "1",
+          "Value": {
+            "StringValue": "warning"
+          },
+          "CategoryReference": {
+            "$type": "Category",
+            "value": [
+              "org.example.households",
+              "instrument-flat.branch-kind-cat-1",
+              "1"
+            ]
+          }
+        },
+        {
+          "URN": "urn:ddi:org.example.households:instrument-flat.branch-kind-code-2:1",
+          "Agency": "org.example.households",
+          "ID": "instrument-flat.branch-kind-code-2",
+          "Version": "1",
+          "Value": {
+            "StringValue": "blocking"
+          },
+          "CategoryReference": {
+            "$type": "Category",
+            "value": [
+              "org.example.households",
+              "instrument-flat.branch-kind-cat-2",
+              "1"
+            ]
+          }
+        },
+        {
+          "URN": "urn:ddi:org.example.households:instrument-flat.branch-kind-code-3:1",
+          "Agency": "org.example.households",
+          "ID": "instrument-flat.branch-kind-code-3",
+          "Version": "1",
+          "Value": {
+            "StringValue": "stop"
+          },
+          "CategoryReference": {
+            "$type": "Category",
+            "value": [
+              "org.example.households",
+              "instrument-flat.branch-kind-cat-3",
+              "1"
+            ]
+          }
+        }
+      ]
+    },
+    "org.example.households:scale-yes_no.codes:1": {
+      "URN": "urn:ddi:org.example.households:scale-yes_no.codes:1",
+      "Agency": "org.example.households",
+      "ID": "scale-yes_no.codes",
+      "Version": "1",
+      "CodeListName": [
+        {
+          "String": [
+            {
+              "MultilingualStringValue": {
+                "LanguageTag": "en",
+                "Value": "yes_no"
+              }
+            }
+          ]
+        }
+      ],
+      "Code": [
+        {
+          "URN": "urn:ddi:org.example.households:scale-yes_no.code-0:1",
+          "Agency": "org.example.households",
+          "ID": "scale-yes_no.code-0",
+          "Version": "1",
+          "Value": {
+            "StringValue": "1"
+          },
+          "CategoryReference": {
+            "$type": "Category",
+            "value": [
+              "org.example.households",
+              "scale-yes_no.cat-0",
+              "1"
+            ]
+          }
+        },
+        {
+          "URN": "urn:ddi:org.example.households:scale-yes_no.code-1:1",
+          "Agency": "org.example.households",
+          "ID": "scale-yes_no.code-1",
+          "Version": "1",
+          "Value": {
+            "StringValue": "2"
+          },
+          "CategoryReference": {
+            "$type": "Category",
+            "value": [
+              "org.example.households",
+              "scale-yes_no.cat-1",
+              "1"
+            ]
+          }
+        }
+      ]
+    },
+    "org.example.households:missing-values.codes:1": {
+      "URN": "urn:ddi:org.example.households:missing-values.codes:1",
+      "Agency": "org.example.households",
+      "ID": "missing-values.codes",
+      "Version": "1",
+      "Code": [
+        {
+          "URN": "urn:ddi:org.example.households:missing-values.code-0:1",
+          "Agency": "org.example.households",
+          "ID": "missing-values.code-0",
+          "Version": "1",
+          "Value": {
+            "StringValue": "-8"
+          },
+          "CategoryReference": {
+            "$type": "Category",
+            "value": [
+              "org.example.households",
+              "missing-values.cat-0",
+              "1"
+            ]
+          }
+        },
+        {
+          "URN": "urn:ddi:org.example.households:missing-values.code-1:1",
+          "Agency": "org.example.households",
+          "ID": "missing-values.code-1",
+          "Version": "1",
+          "Value": {
+            "StringValue": "-9"
+          },
+          "CategoryReference": {
+            "$type": "Category",
+            "value": [
+              "org.example.households",
+              "missing-values.cat-1",
+              "1"
+            ]
+          }
+        }
+      ]
+    },
+    "org.example.households:tenure.codes:1": {
+      "URN": "urn:ddi:org.example.households:tenure.codes:1",
+      "Agency": "org.example.households",
+      "ID": "tenure.codes",
+      "Version": "1",
+      "Code": [
+        {
+          "URN": "urn:ddi:org.example.households:tenure.code-0:1",
+          "Agency": "org.example.households",
+          "ID": "tenure.code-0",
+          "Version": "1",
+          "Value": {
+            "StringValue": "1"
+          },
+          "CategoryReference": {
+            "$type": "Category",
+            "value": [
+              "org.example.households",
+              "tenure.cat-0",
+              "1"
+            ]
+          }
+        },
+        {
+          "URN": "urn:ddi:org.example.households:tenure.code-1:1",
+          "Agency": "org.example.households",
+          "ID": "tenure.code-1",
+          "Version": "1",
+          "Value": {
+            "StringValue": "2"
+          },
+          "CategoryReference": {
+            "$type": "Category",
+            "value": [
+              "org.example.households",
+              "tenure.cat-1",
+              "1"
+            ]
+          }
+        },
+        {
+          "URN": "urn:ddi:org.example.households:tenure.code-2:1",
+          "Agency": "org.example.households",
+          "ID": "tenure.code-2",
+          "Version": "1",
+          "Value": {
+            "StringValue": "3"
+          },
+          "CategoryReference": {
+            "$type": "Category",
+            "value": [
+              "org.example.households",
+              "tenure.cat-2",
+              "1"
+            ]
+          }
+        }
+      ]
+    }
+  },
+  "Category": {
+    "org.example.households:instrument-flat.missing-cat-0:1": {
+      "URN": "urn:ddi:org.example.households:instrument-flat.missing-cat-0:1",
+      "Agency": "org.example.households",
+      "ID": "instrument-flat.missing-cat-0",
+      "Version": "1",
+      "Label": [
+        {
+          "Content": [
+            {
+              "MultilingualStringValue": {
+                "LanguageTag": "en",
+                "Value": "Refused"
+              }
+            }
+          ]
+        }
+      ],
+      "IsMissing": true
+    },
+    "org.example.households:instrument-flat.missing-cat-1:1": {
+      "URN": "urn:ddi:org.example.households:instrument-flat.missing-cat-1:1",
+      "Agency": "org.example.households",
+      "ID": "instrument-flat.missing-cat-1",
+      "Version": "1",
+      "Label": [
+        {
+          "Content": [
+            {
+              "MultilingualStringValue": {
+                "LanguageTag": "en",
+                "Value": "Don't know"
+              }
+            }
+          ]
+        }
+      ],
+      "IsMissing": true
+    },
+    "org.example.households:instrument-flat.input-county-cat-0:1": {
+      "URN": "urn:ddi:org.example.households:instrument-flat.input-county-cat-0:1",
+      "Agency": "org.example.households",
+      "ID": "instrument-flat.input-county-cat-0",
+      "Version": "1",
+      "Label": [
+        {
+          "Content": [
+            {
+              "MultilingualStringValue": {
+                "LanguageTag": "en",
+                "Value": "North County"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "org.example.households:instrument-flat.input-county-cat-1:1": {
+      "URN": "urn:ddi:org.example.households:instrument-flat.input-county-cat-1:1",
+      "Agency": "org.example.households",
+      "ID": "instrument-flat.input-county-cat-1",
+      "Version": "1",
+      "Label": [
+        {
+          "Content": [
+            {
+              "MultilingualStringValue": {
+                "LanguageTag": "en",
+                "Value": "South County"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "org.example.households:instrument-flat.branch-kind-cat-0:1": {
+      "URN": "urn:ddi:org.example.households:instrument-flat.branch-kind-cat-0:1",
+      "Agency": "org.example.households",
+      "ID": "instrument-flat.branch-kind-cat-0",
+      "Version": "1",
+      "Label": [
+        {
+          "Content": [
+            {
+              "MultilingualStringValue": {
+                "LanguageTag": "en",
+                "Value": "info"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "org.example.households:instrument-flat.branch-kind-cat-1:1": {
+      "URN": "urn:ddi:org.example.households:instrument-flat.branch-kind-cat-1:1",
+      "Agency": "org.example.households",
+      "ID": "instrument-flat.branch-kind-cat-1",
+      "Version": "1",
+      "Label": [
+        {
+          "Content": [
+            {
+              "MultilingualStringValue": {
+                "LanguageTag": "en",
+                "Value": "warning"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "org.example.households:instrument-flat.branch-kind-cat-2:1": {
+      "URN": "urn:ddi:org.example.households:instrument-flat.branch-kind-cat-2:1",
+      "Agency": "org.example.households",
+      "ID": "instrument-flat.branch-kind-cat-2",
+      "Version": "1",
+      "Label": [
+        {
+          "Content": [
+            {
+              "MultilingualStringValue": {
+                "LanguageTag": "en",
+                "Value": "blocking"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "org.example.households:instrument-flat.branch-kind-cat-3:1": {
+      "URN": "urn:ddi:org.example.households:instrument-flat.branch-kind-cat-3:1",
+      "Agency": "org.example.households",
+      "ID": "instrument-flat.branch-kind-cat-3",
+      "Version": "1",
+      "Label": [
+        {
+          "Content": [
+            {
+              "MultilingualStringValue": {
+                "LanguageTag": "en",
+                "Value": "stop"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "org.example.households:scale-yes_no.cat-0:1": {
+      "URN": "urn:ddi:org.example.households:scale-yes_no.cat-0:1",
+      "Agency": "org.example.households",
+      "ID": "scale-yes_no.cat-0",
+      "Version": "1",
+      "Label": [
+        {
+          "Content": [
+            {
+              "MultilingualStringValue": {
+                "LanguageTag": "en",
+                "Value": "Yes"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "org.example.households:scale-yes_no.cat-1:1": {
+      "URN": "urn:ddi:org.example.households:scale-yes_no.cat-1:1",
+      "Agency": "org.example.households",
+      "ID": "scale-yes_no.cat-1",
+      "Version": "1",
+      "Label": [
+        {
+          "Content": [
+            {
+              "MultilingualStringValue": {
+                "LanguageTag": "en",
+                "Value": "No"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "org.example.households:missing-values.cat-0:1": {
+      "URN": "urn:ddi:org.example.households:missing-values.cat-0:1",
+      "Agency": "org.example.households",
+      "ID": "missing-values.cat-0",
+      "Version": "1",
+      "Label": [
+        {
+          "Content": [
+            {
+              "MultilingualStringValue": {
+                "LanguageTag": "en",
+                "Value": "Refused"
+              }
+            }
+          ]
+        }
+      ],
+      "IsMissing": true
+    },
+    "org.example.households:missing-values.cat-1:1": {
+      "URN": "urn:ddi:org.example.households:missing-values.cat-1:1",
+      "Agency": "org.example.households",
+      "ID": "missing-values.cat-1",
+      "Version": "1",
+      "Label": [
+        {
+          "Content": [
+            {
+              "MultilingualStringValue": {
+                "LanguageTag": "en",
+                "Value": "Don't know"
+              }
+            }
+          ]
+        }
+      ],
+      "IsMissing": true
+    },
+    "org.example.households:tenure.cat-0:1": {
+      "URN": "urn:ddi:org.example.households:tenure.cat-0:1",
+      "Agency": "org.example.households",
+      "ID": "tenure.cat-0",
+      "Version": "1",
+      "Label": [
+        {
+          "Content": [
+            {
+              "MultilingualStringValue": {
+                "LanguageTag": "en",
+                "Value": "Own"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "org.example.households:tenure.cat-1:1": {
+      "URN": "urn:ddi:org.example.households:tenure.cat-1:1",
+      "Agency": "org.example.households",
+      "ID": "tenure.cat-1",
+      "Version": "1",
+      "Label": [
+        {
+          "Content": [
+            {
+              "MultilingualStringValue": {
+                "LanguageTag": "en",
+                "Value": "Rent"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "org.example.households:tenure.cat-2:1": {
+      "URN": "urn:ddi:org.example.households:tenure.cat-2:1",
+      "Agency": "org.example.households",
+      "ID": "tenure.cat-2",
+      "Version": "1",
+      "Label": [
+        {
+          "Content": [
+            {
+              "MultilingualStringValue": {
+                "LanguageTag": "en",
+                "Value": "Neither"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "Variable": {
+    "org.example.households:instrument-flat.var-county:1": {
+      "URN": "urn:ddi:org.example.households:instrument-flat.var-county:1",
+      "Agency": "org.example.households",
+      "ID": "instrument-flat.var-county",
+      "Version": "1",
+      "VariableName": [
+        {
+          "String": [
+            {
+              "MultilingualStringValue": {
+                "LanguageTag": "en",
+                "Value": "county"
+              }
+            }
+          ]
+        }
+      ],
+      "Description": {
+        "Content": [
+          {
+            "MultilingualStringValue": {
+              "LanguageTag": "en",
+              "Value": "From the sample file."
+            }
+          }
+        ]
+      },
+      "OutParameter": {
+        "URN": "urn:ddi:org.example.households:instrument-flat.out-county:1",
+        "Agency": "org.example.households",
+        "ID": "instrument-flat.out-county",
+        "Version": "1",
+        "ParameterName": [
+          {
+            "String": [
+              {
+                "MultilingualStringValue": {
+                  "LanguageTag": "en",
+                  "Value": "county"
+                }
+              }
+            ]
+          }
+        ],
+        "ValueRepresentation": {
+          "$type": "CodeDomain",
+          "CodeListReference": {
+            "$type": "CodeList",
+            "value": [
+              "org.example.households",
+              "instrument-flat.input-county-codes",
+              "1"
+            ]
+          }
+        }
+      },
+      "VariableRepresentation": {
+        "ValueRepresentation": {
+          "$type": "CodeDomain",
+          "CodeListReference": {
+            "$type": "CodeList",
+            "value": [
+              "org.example.households",
+              "instrument-flat.input-county-codes",
+              "1"
+            ]
+          }
+        },
+        "MissingValuesReference": {
+          "$type": "ManagedMissingValuesRepresentation",
+          "value": [
+            "org.example.households",
+            "instrument-flat.missing",
+            "1"
+          ]
+        }
+      }
+    },
+    "org.example.households:instrument-flat.var-consent:1": {
+      "URN": "urn:ddi:org.example.households:instrument-flat.var-consent:1",
+      "Agency": "org.example.households",
+      "ID": "instrument-flat.var-consent",
+      "Version": "1",
+      "VariableName": [
+        {
+          "String": [
+            {
+              "MultilingualStringValue": {
+                "LanguageTag": "en",
+                "Value": "consent"
+              }
+            }
+          ]
+        }
+      ],
+      "QuestionReference": [
+        {
+          "$type": "QuestionItem",
+          "value": [
+            "org.example.households",
+            "consent",
+            "1"
+          ]
+        }
+      ],
+      "SourceParameterReference": {
+        "URN": "urn:ddi:org.example.households:consent.out-consent:1",
+        "Agency": "org.example.households",
+        "ID": "consent.out-consent",
+        "Version": "1"
+      },
+      "VariableRepresentation": {
+        "ValueRepresentation": {
+          "$type": "CodeDomain",
+          "CodeListReference": {
+            "$type": "CodeList",
+            "value": [
+              "org.example.households",
+              "scale-yes_no.codes",
+              "1"
+            ]
+          }
+        },
+        "MissingValuesReference": {
+          "$type": "ManagedMissingValuesRepresentation",
+          "value": [
+            "org.example.households",
+            "missing-values",
+            "1"
+          ]
+        }
+      },
+      "OutParameter": {
+        "URN": "urn:ddi:org.example.households:instrument-flat.out-consent:1",
+        "Agency": "org.example.households",
+        "ID": "instrument-flat.out-consent",
+        "Version": "1",
+        "ParameterName": [
+          {
+            "String": [
+              {
+                "MultilingualStringValue": {
+                  "LanguageTag": "en",
+                  "Value": "consent"
+                }
+              }
+            ]
+          }
+        ],
+        "ValueRepresentation": {
+          "$type": "CodeDomain",
+          "CodeListReference": {
+            "$type": "CodeList",
+            "value": [
+              "org.example.households",
+              "scale-yes_no.codes",
+              "1"
+            ]
+          }
+        }
+      }
+    },
+    "org.example.households:instrument-flat.var-size:1": {
+      "URN": "urn:ddi:org.example.households:instrument-flat.var-size:1",
+      "Agency": "org.example.households",
+      "ID": "instrument-flat.var-size",
+      "Version": "1",
+      "VariableName": [
+        {
+          "String": [
+            {
+              "MultilingualStringValue": {
+                "LanguageTag": "en",
+                "Value": "size"
+              }
+            }
+          ]
+        }
+      ],
+      "QuestionReference": [
+        {
+          "$type": "QuestionItem",
+          "value": [
+            "org.example.households",
+            "size",
+            "1"
+          ]
+        }
+      ],
+      "SourceParameterReference": {
+        "URN": "urn:ddi:org.example.households:size.out-size:1",
+        "Agency": "org.example.households",
+        "ID": "size.out-size",
+        "Version": "1"
+      },
+      "VariableRepresentation": {
+        "ValueRepresentation": {
+          "$type": "NumericDomain",
+          "NumberRange": [
+            {
+              "Low": {
+                "DecimalValue": 1,
+                "IsInclusive": true
+              },
+              "High": {
+                "DecimalValue": 20,
+                "IsInclusive": true
+              }
+            }
+          ],
+          "NumericTypeCode": {
+            "StringValue": "Integer"
+          }
+        },
+        "MissingValuesReference": {
+          "$type": "ManagedMissingValuesRepresentation",
+          "value": [
+            "org.example.households",
+            "missing-values",
+            "1"
+          ]
+        }
+      },
+      "OutParameter": {
+        "URN": "urn:ddi:org.example.households:instrument-flat.out-size:1",
+        "Agency": "org.example.households",
+        "ID": "instrument-flat.out-size",
+        "Version": "1",
+        "ParameterName": [
+          {
+            "String": [
+              {
+                "MultilingualStringValue": {
+                  "LanguageTag": "en",
+                  "Value": "size"
+                }
+              }
+            ]
+          }
+        ],
+        "ValueRepresentation": {
+          "$type": "NumericDomain",
+          "NumberRange": [
+            {
+              "Low": {
+                "DecimalValue": 1,
+                "IsInclusive": true
+              },
+              "High": {
+                "DecimalValue": 20,
+                "IsInclusive": true
+              }
+            }
+          ],
+          "NumericTypeCode": {
+            "StringValue": "Integer"
+          }
+        }
+      }
+    },
+    "org.example.households:instrument-flat.var-tenure:1": {
+      "URN": "urn:ddi:org.example.households:instrument-flat.var-tenure:1",
+      "Agency": "org.example.households",
+      "ID": "instrument-flat.var-tenure",
+      "Version": "1",
+      "VariableName": [
+        {
+          "String": [
+            {
+              "MultilingualStringValue": {
+                "LanguageTag": "en",
+                "Value": "tenure"
+              }
+            }
+          ]
+        }
+      ],
+      "QuestionReference": [
+        {
+          "$type": "QuestionItem",
+          "value": [
+            "org.example.households",
+            "tenure",
+            "1"
+          ]
+        }
+      ],
+      "SourceParameterReference": {
+        "URN": "urn:ddi:org.example.households:tenure.out-tenure:1",
+        "Agency": "org.example.households",
+        "ID": "tenure.out-tenure",
+        "Version": "1"
+      },
+      "VariableRepresentation": {
+        "ValueRepresentation": {
+          "$type": "CodeDomain",
+          "CodeListReference": {
+            "$type": "CodeList",
+            "value": [
+              "org.example.households",
+              "tenure.codes",
+              "1"
+            ]
+          }
+        },
+        "MissingValuesReference": {
+          "$type": "ManagedMissingValuesRepresentation",
+          "value": [
+            "org.example.households",
+            "missing-values",
+            "1"
+          ]
+        }
+      },
+      "OutParameter": {
+        "URN": "urn:ddi:org.example.households:instrument-flat.out-tenure:1",
+        "Agency": "org.example.households",
+        "ID": "instrument-flat.out-tenure",
+        "Version": "1",
+        "ParameterName": [
+          {
+            "String": [
+              {
+                "MultilingualStringValue": {
+                  "LanguageTag": "en",
+                  "Value": "tenure"
+                }
+              }
+            ]
+          }
+        ],
+        "ValueRepresentation": {
+          "$type": "CodeDomain",
+          "CodeListReference": {
+            "$type": "CodeList",
+            "value": [
+              "org.example.households",
+              "tenure.codes",
+              "1"
+            ]
+          }
+        }
+      }
+    },
+    "org.example.households:instrument-flat.var-rent:1": {
+      "URN": "urn:ddi:org.example.households:instrument-flat.var-rent:1",
+      "Agency": "org.example.households",
+      "ID": "instrument-flat.var-rent",
+      "Version": "1",
+      "VariableName": [
+        {
+          "String": [
+            {
+              "MultilingualStringValue": {
+                "LanguageTag": "en",
+                "Value": "rent"
+              }
+            }
+          ]
+        }
+      ],
+      "QuestionReference": [
+        {
+          "$type": "QuestionItem",
+          "value": [
+            "org.example.households",
+            "rent",
+            "1"
+          ]
+        }
+      ],
+      "SourceParameterReference": {
+        "URN": "urn:ddi:org.example.households:rent.out-rent:1",
+        "Agency": "org.example.households",
+        "ID": "rent.out-rent",
+        "Version": "1"
+      },
+      "UniverseReference": [
+        {
+          "$type": "Universe",
+          "value": [
+            "org.example.households",
+            "universe-renters",
+            "1"
+          ]
+        }
+      ],
+      "VariableRepresentation": {
+        "ValueRepresentation": {
+          "$type": "NumericDomain",
+          "NumberRange": [
+            {
+              "Low": {
+                "DecimalValue": 0,
+                "IsInclusive": true
+              }
+            }
+          ],
+          "NumericTypeCode": {
+            "StringValue": "Integer"
+          }
+        },
+        "MissingValuesReference": {
+          "$type": "ManagedMissingValuesRepresentation",
+          "value": [
+            "org.example.households",
+            "missing-values",
+            "1"
+          ]
+        }
+      },
+      "OutParameter": {
+        "URN": "urn:ddi:org.example.households:instrument-flat.out-rent:1",
+        "Agency": "org.example.households",
+        "ID": "instrument-flat.out-rent",
+        "Version": "1",
+        "ParameterName": [
+          {
+            "String": [
+              {
+                "MultilingualStringValue": {
+                  "LanguageTag": "en",
+                  "Value": "rent"
+                }
+              }
+            ]
+          }
+        ],
+        "ValueRepresentation": {
+          "$type": "NumericDomain",
+          "NumberRange": [
+            {
+              "Low": {
+                "DecimalValue": 0,
+                "IsInclusive": true
+              }
+            }
+          ],
+          "NumericTypeCode": {
+            "StringValue": "Integer"
+          }
+        }
+      }
+    },
+    "org.example.households:instrument-flat.var-comments:1": {
+      "URN": "urn:ddi:org.example.households:instrument-flat.var-comments:1",
+      "Agency": "org.example.households",
+      "ID": "instrument-flat.var-comments",
+      "Version": "1",
+      "VariableName": [
+        {
+          "String": [
+            {
+              "MultilingualStringValue": {
+                "LanguageTag": "en",
+                "Value": "comments"
+              }
+            }
+          ]
+        }
+      ],
+      "QuestionReference": [
+        {
+          "$type": "QuestionItem",
+          "value": [
+            "org.example.households",
+            "comments",
+            "1"
+          ]
+        }
+      ],
+      "SourceParameterReference": {
+        "URN": "urn:ddi:org.example.households:comments.out-comments:1",
+        "Agency": "org.example.households",
+        "ID": "comments.out-comments",
+        "Version": "1"
+      },
+      "VariableRepresentation": {
+        "ValueRepresentation": {
+          "$type": "TextDomain",
+          "MaxLength": 500
+        },
+        "MissingValuesReference": {
+          "$type": "ManagedMissingValuesRepresentation",
+          "value": [
+            "org.example.households",
+            "missing-values",
+            "1"
+          ]
+        }
+      },
+      "OutParameter": {
+        "URN": "urn:ddi:org.example.households:instrument-flat.out-comments:1",
+        "Agency": "org.example.households",
+        "ID": "instrument-flat.out-comments",
+        "Version": "1",
+        "ParameterName": [
+          {
+            "String": [
+              {
+                "MultilingualStringValue": {
+                  "LanguageTag": "en",
+                  "Value": "comments"
+                }
+              }
+            ]
+          }
+        ],
+        "ValueRepresentation": {
+          "$type": "TextDomain",
+          "MaxLength": 500
+        }
+      }
+    }
+  },
+  "StatementItem": {
+    "org.example.households:instrument-flat.say-1:1": {
+      "URN": "urn:ddi:org.example.households:instrument-flat.say-1:1",
+      "Agency": "org.example.households",
+      "ID": "instrument-flat.say-1",
+      "Version": "1",
+      "DisplayText": [
+        {
+          "TextContent": [
+            {
+              "Text": {
+                "MultilingualStringValue": {
+                  "LanguageTag": "en",
+                  "Value": "Thank you for taking part in this survey of "
+                }
+              }
+            },
+            {
+              "SourceParameterReference": {
+                "URN": "urn:ddi:org.example.households:instrument-flat.out-county:1",
+                "Agency": "org.example.households",
+                "ID": "instrument-flat.out-county",
+                "Version": "1"
+              }
+            },
+            {
+              "Text": {
+                "MultilingualStringValue": {
+                  "LanguageTag": "en",
+                  "Value": "."
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "org.example.households:instrument-flat.say-2:1": {
+      "URN": "urn:ddi:org.example.households:instrument-flat.say-2:1",
+      "Agency": "org.example.households",
+      "ID": "instrument-flat.say-2",
+      "Version": "1",
+      "DisplayText": [
+        {
+          "TextContent": [
+            {
+              "Text": {
+                "MultilingualStringValue": {
+                  "LanguageTag": "en",
+                  "Value": "Thank you for your time."
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "QuestionConstruct": {
+    "org.example.households:instrument-flat.ask-consent:1": {
+      "URN": "urn:ddi:org.example.households:instrument-flat.ask-consent:1",
+      "Agency": "org.example.households",
+      "ID": "instrument-flat.ask-consent",
+      "Version": "1",
+      "QuestionReference": {
+        "$type": "QuestionItem",
+        "value": [
+          "org.example.households",
+          "consent",
+          "1"
+        ]
+      },
+      "Binding": [
+        {
+          "SourceParameterReference": {
+            "URN": "urn:ddi:org.example.households:consent.out-consent:1",
+            "Agency": "org.example.households",
+            "ID": "consent.out-consent",
+            "Version": "1"
+          },
+          "TargetParameterReference": {
+            "URN": "urn:ddi:org.example.households:instrument-flat.out-consent:1",
+            "Agency": "org.example.households",
+            "ID": "instrument-flat.out-consent",
+            "Version": "1"
+          }
+        }
+      ]
+    },
+    "org.example.households:instrument-flat.ask-size:1": {
+      "URN": "urn:ddi:org.example.households:instrument-flat.ask-size:1",
+      "Agency": "org.example.households",
+      "ID": "instrument-flat.ask-size",
+      "Version": "1",
+      "QuestionReference": {
+        "$type": "QuestionItem",
+        "value": [
+          "org.example.households",
+          "size",
+          "1"
+        ]
+      },
+      "Binding": [
+        {
+          "SourceParameterReference": {
+            "URN": "urn:ddi:org.example.households:size.out-size:1",
+            "Agency": "org.example.households",
+            "ID": "size.out-size",
+            "Version": "1"
+          },
+          "TargetParameterReference": {
+            "URN": "urn:ddi:org.example.households:instrument-flat.out-size:1",
+            "Agency": "org.example.households",
+            "ID": "instrument-flat.out-size",
+            "Version": "1"
+          }
+        }
+      ]
+    },
+    "org.example.households:instrument-flat.ask-tenure:1": {
+      "URN": "urn:ddi:org.example.households:instrument-flat.ask-tenure:1",
+      "Agency": "org.example.households",
+      "ID": "instrument-flat.ask-tenure",
+      "Version": "1",
+      "QuestionReference": {
+        "$type": "QuestionItem",
+        "value": [
+          "org.example.households",
+          "tenure",
+          "1"
+        ]
+      },
+      "Binding": [
+        {
+          "SourceParameterReference": {
+            "URN": "urn:ddi:org.example.households:tenure.out-tenure:1",
+            "Agency": "org.example.households",
+            "ID": "tenure.out-tenure",
+            "Version": "1"
+          },
+          "TargetParameterReference": {
+            "URN": "urn:ddi:org.example.households:instrument-flat.out-tenure:1",
+            "Agency": "org.example.households",
+            "ID": "instrument-flat.out-tenure",
+            "Version": "1"
+          }
+        }
+      ]
+    },
+    "org.example.households:instrument-flat.ask-rent:1": {
+      "URN": "urn:ddi:org.example.households:instrument-flat.ask-rent:1",
+      "Agency": "org.example.households",
+      "ID": "instrument-flat.ask-rent",
+      "Version": "1",
+      "QuestionReference": {
+        "$type": "QuestionItem",
+        "value": [
+          "org.example.households",
+          "rent",
+          "1"
+        ]
+      },
+      "Binding": [
+        {
+          "SourceParameterReference": {
+            "URN": "urn:ddi:org.example.households:rent.out-rent:1",
+            "Agency": "org.example.households",
+            "ID": "rent.out-rent",
+            "Version": "1"
+          },
+          "TargetParameterReference": {
+            "URN": "urn:ddi:org.example.households:instrument-flat.out-rent:1",
+            "Agency": "org.example.households",
+            "ID": "instrument-flat.out-rent",
+            "Version": "1"
+          }
+        }
+      ]
+    },
+    "org.example.households:instrument-flat.ask-comments:1": {
+      "URN": "urn:ddi:org.example.households:instrument-flat.ask-comments:1",
+      "Agency": "org.example.households",
+      "ID": "instrument-flat.ask-comments",
+      "Version": "1",
+      "QuestionReference": {
+        "$type": "QuestionItem",
+        "value": [
+          "org.example.households",
+          "comments",
+          "1"
+        ]
+      },
+      "Binding": [
+        {
+          "SourceParameterReference": {
+            "URN": "urn:ddi:org.example.households:comments.out-comments:1",
+            "Agency": "org.example.households",
+            "ID": "comments.out-comments",
+            "Version": "1"
+          },
+          "TargetParameterReference": {
+            "URN": "urn:ddi:org.example.households:instrument-flat.out-comments:1",
+            "Agency": "org.example.households",
+            "ID": "instrument-flat.out-comments",
+            "Version": "1"
+          }
+        }
+      ]
+    }
+  },
+  "Sequence": {
+    "org.example.households:instrument-flat.stop-1-then:1": {
+      "URN": "urn:ddi:org.example.households:instrument-flat.stop-1-then:1",
+      "Agency": "org.example.households",
+      "ID": "instrument-flat.stop-1-then",
+      "Version": "1",
+      "ControlConstructReference": [
+        {
+          "$type": "StatementItem",
+          "value": [
+            "org.example.households",
+            "instrument-flat.say-2",
+            "1"
+          ]
+        }
+      ]
+    },
+    "org.example.households:instrument-flat.if-1-then:1": {
+      "URN": "urn:ddi:org.example.households:instrument-flat.if-1-then:1",
+      "Agency": "org.example.households",
+      "ID": "instrument-flat.if-1-then",
+      "Version": "1",
+      "ControlConstructReference": [
+        {
+          "$type": "QuestionConstruct",
+          "value": [
+            "org.example.households",
+            "instrument-flat.ask-rent",
+            "1"
+          ]
+        }
+      ]
+    },
+    "org.example.households:instrument-flat.stop-1-rest:1": {
+      "URN": "urn:ddi:org.example.households:instrument-flat.stop-1-rest:1",
+      "Agency": "org.example.households",
+      "ID": "instrument-flat.stop-1-rest",
+      "Version": "1",
+      "ControlConstructReference": [
+        {
+          "$type": "QuestionConstruct",
+          "value": [
+            "org.example.households",
+            "instrument-flat.ask-size",
+            "1"
+          ]
+        },
+        {
+          "$type": "QuestionConstruct",
+          "value": [
+            "org.example.households",
+            "instrument-flat.ask-tenure",
+            "1"
+          ]
+        },
+        {
+          "$type": "IfThenElse",
+          "value": [
+            "org.example.households",
+            "instrument-flat.if-1",
+            "1"
+          ]
+        },
+        {
+          "$type": "QuestionConstruct",
+          "value": [
+            "org.example.households",
+            "instrument-flat.ask-comments",
+            "1"
+          ]
+        }
+      ]
+    },
+    "org.example.households:instrument-flat.flow:1": {
+      "URN": "urn:ddi:org.example.households:instrument-flat.flow:1",
+      "Agency": "org.example.households",
+      "ID": "instrument-flat.flow",
+      "Version": "1",
+      "ControlConstructReference": [
+        {
+          "$type": "StatementItem",
+          "value": [
+            "org.example.households",
+            "instrument-flat.say-1",
+            "1"
+          ]
+        },
+        {
+          "$type": "QuestionConstruct",
+          "value": [
+            "org.example.households",
+            "instrument-flat.ask-consent",
+            "1"
+          ]
+        },
+        {
+          "$type": "IfThenElse",
+          "value": [
+            "org.example.households",
+            "instrument-flat.stop-1",
+            "1"
+          ]
+        }
+      ]
+    }
+  },
+  "IfThenElse": {
+    "org.example.households:instrument-flat.if-1:1": {
+      "URN": "urn:ddi:org.example.households:instrument-flat.if-1:1",
+      "Agency": "org.example.households",
+      "ID": "instrument-flat.if-1",
+      "Version": "1",
+      "IfCondition": {
+        "Description": {
+          "Content": [
+            {
+              "MultilingualStringValue": {
+                "LanguageTag": "en",
+                "Value": "VTL 2.1. A question not answered reads as null, and a condition that is null is not true."
+              }
+            }
+          ]
+        },
+        "Command": [
+          {
+            "ProgramLanguage": {
+              "StringValue": "VTL"
+            },
+            "CommandContent": "tenure = \"2\"",
+            "InParameter": [
+              {
+                "URN": "urn:ddi:org.example.households:instrument-flat.if-1-in-tenure:1",
+                "Agency": "org.example.households",
+                "ID": "instrument-flat.if-1-in-tenure",
+                "Version": "1",
+                "Alias": "tenure"
+              }
+            ],
+            "Binding": [
+              {
+                "SourceParameterReference": {
+                  "URN": "urn:ddi:org.example.households:instrument-flat.out-tenure:1",
+                  "Agency": "org.example.households",
+                  "ID": "instrument-flat.out-tenure",
+                  "Version": "1"
+                },
+                "TargetParameterReference": {
+                  "URN": "urn:ddi:org.example.households:instrument-flat.if-1-in-tenure:1",
+                  "Agency": "org.example.households",
+                  "ID": "instrument-flat.if-1-in-tenure",
+                  "Version": "1"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "ThenConstructReference": {
+        "$type": "Sequence",
+        "value": [
+          "org.example.households",
+          "instrument-flat.if-1-then",
+          "1"
+        ]
+      }
+    },
+    "org.example.households:instrument-flat.stop-1:1": {
+      "URN": "urn:ddi:org.example.households:instrument-flat.stop-1:1",
+      "Agency": "org.example.households",
+      "ID": "instrument-flat.stop-1",
+      "Version": "1",
+      "TypeOfIfThenElse": {
+        "StringValue": "stop",
+        "ControlledVocabularyCodeListReference": {
+          "$type": "CodeList",
+          "value": [
+            "org.example.households",
+            "instrument-flat.branch-kinds",
+            "1"
+          ]
+        }
+      },
+      "IfCondition": {
+        "Description": {
+          "Content": [
+            {
+              "MultilingualStringValue": {
+                "LanguageTag": "en",
+                "Value": "VTL 2.1. A question not answered reads as null, and a condition that is null is not true."
+              }
+            }
+          ]
+        },
+        "Command": [
+          {
+            "ProgramLanguage": {
+              "StringValue": "VTL"
+            },
+            "CommandContent": "consent = \"2\"",
+            "InParameter": [
+              {
+                "URN": "urn:ddi:org.example.households:instrument-flat.stop-1-in-consent:1",
+                "Agency": "org.example.households",
+                "ID": "instrument-flat.stop-1-in-consent",
+                "Version": "1",
+                "Alias": "consent"
+              }
+            ],
+            "Binding": [
+              {
+                "SourceParameterReference": {
+                  "URN": "urn:ddi:org.example.households:instrument-flat.out-consent:1",
+                  "Agency": "org.example.households",
+                  "ID": "instrument-flat.out-consent",
+                  "Version": "1"
+                },
+                "TargetParameterReference": {
+                  "URN": "urn:ddi:org.example.households:instrument-flat.stop-1-in-consent:1",
+                  "Agency": "org.example.households",
+                  "ID": "instrument-flat.stop-1-in-consent",
+                  "Version": "1"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "ThenConstructReference": {
+        "$type": "Sequence",
+        "value": [
+          "org.example.households",
+          "instrument-flat.stop-1-then",
+          "1"
+        ]
+      },
+      "ElseConstructReference": {
+        "$type": "Sequence",
+        "value": [
+          "org.example.households",
+          "instrument-flat.stop-1-rest",
+          "1"
+        ]
+      }
+    }
+  },
+  "Instrument": {
+    "org.example.households:instrument-flat:1": {
+      "URN": "urn:ddi:org.example.households:instrument-flat:1",
+      "Agency": "org.example.households",
+      "ID": "instrument-flat",
+      "Version": "1",
+      "InstrumentName": [
+        {
+          "String": [
+            {
+              "MultilingualStringValue": {
+                "LanguageTag": "en",
+                "Value": "flat"
+              }
+            }
+          ]
+        }
+      ],
+      "Label": [
+        {
+          "Content": [
+            {
+              "MultilingualStringValue": {
+                "LanguageTag": "en",
+                "Value": "Housing, without a roster"
+              }
+            }
+          ]
+        }
+      ],
+      "Description": {
+        "Content": [
+          {
+            "MultilingualStringValue": {
+              "LanguageTag": "en",
+              "Value": "A small instrument with no roster, for the harness's tests."
+            }
+          }
+        ]
+      },
+      "ControlConstructReference": {
+        "$type": "Sequence",
+        "value": [
+          "org.example.households",
+          "instrument-flat.flow",
+          "1"
+        ]
+      }
+    }
+  },
+  "QuestionItem": {
+    "org.example.households:consent:1": {
+      "URN": "urn:ddi:org.example.households:consent:1",
+      "Agency": "org.example.households",
+      "ID": "consent",
+      "Version": "1",
+      "QuestionItemName": [
+        {
+          "String": [
+            {
+              "MultilingualStringValue": {
+                "LanguageTag": "en",
+                "Value": "consent"
+              }
+            }
+          ]
+        }
+      ],
+      "QuestionText": [
+        {
+          "TextContent": [
+            {
+              "Text": {
+                "MultilingualStringValue": {
+                  "LanguageTag": "en",
+                  "Value": "Do you agree to take part in this survey?"
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "OutParameter": [
+        {
+          "URN": "urn:ddi:org.example.households:consent.out-consent:1",
+          "Agency": "org.example.households",
+          "ID": "consent.out-consent",
+          "Version": "1",
+          "ParameterName": [
+            {
+              "String": [
+                {
+                  "MultilingualStringValue": {
+                    "LanguageTag": "en",
+                    "Value": "consent"
+                  }
+                }
+              ]
+            }
+          ],
+          "ValueRepresentation": {
+            "$type": "CodeDomain",
+            "CodeListReference": {
+              "$type": "CodeList",
+              "value": [
+                "org.example.households",
+                "scale-yes_no.codes",
+                "1"
+              ]
+            }
+          }
+        }
+      ],
+      "QuestionIntent": {
+        "Content": [
+          {
+            "MultilingualStringValue": {
+              "LanguageTag": "en",
+              "Value": "Whether the respondent consents to the interview"
+            }
+          }
+        ]
+      },
+      "ResponseDomain": {
+        "$type": "CodeDomain",
+        "CodeListReference": {
+          "$type": "CodeList",
+          "value": [
+            "org.example.households",
+            "scale-yes_no.codes",
+            "1"
+          ]
+        },
+        "ResponseCardinality": {
+          "MaximumResponses": 1
+        }
+      }
+    },
+    "org.example.households:size:1": {
+      "URN": "urn:ddi:org.example.households:size:1",
+      "Agency": "org.example.households",
+      "ID": "size",
+      "Version": "1",
+      "QuestionItemName": [
+        {
+          "String": [
+            {
+              "MultilingualStringValue": {
+                "LanguageTag": "en",
+                "Value": "size"
+              }
+            }
+          ]
+        }
+      ],
+      "QuestionText": [
+        {
+          "TextContent": [
+            {
+              "Text": {
+                "MultilingualStringValue": {
+                  "LanguageTag": "en",
+                  "Value": "How many people live in your household, including you?"
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "OutParameter": [
+        {
+          "URN": "urn:ddi:org.example.households:size.out-size:1",
+          "Agency": "org.example.households",
+          "ID": "size.out-size",
+          "Version": "1",
+          "ParameterName": [
+            {
+              "String": [
+                {
+                  "MultilingualStringValue": {
+                    "LanguageTag": "en",
+                    "Value": "size"
+                  }
+                }
+              ]
+            }
+          ],
+          "ValueRepresentation": {
+            "$type": "NumericDomain",
+            "NumberRange": [
+              {
+                "Low": {
+                  "DecimalValue": 1,
+                  "IsInclusive": true
+                },
+                "High": {
+                  "DecimalValue": 20,
+                  "IsInclusive": true
+                }
+              }
+            ],
+            "NumericTypeCode": {
+              "StringValue": "Integer"
+            }
+          }
+        }
+      ],
+      "QuestionIntent": {
+        "Content": [
+          {
+            "MultilingualStringValue": {
+              "LanguageTag": "en",
+              "Value": "The number of household members, to list each of them"
+            }
+          }
+        ]
+      },
+      "ResponseDomain": {
+        "$type": "NumericDomain",
+        "NumberRange": [
+          {
+            "Low": {
+              "DecimalValue": 1,
+              "IsInclusive": true
+            },
+            "High": {
+              "DecimalValue": 20,
+              "IsInclusive": true
+            }
+          }
+        ],
+        "NumericTypeCode": {
+          "StringValue": "Integer"
+        }
+      }
+    },
+    "org.example.households:tenure:1": {
+      "URN": "urn:ddi:org.example.households:tenure:1",
+      "Agency": "org.example.households",
+      "ID": "tenure",
+      "Version": "1",
+      "QuestionItemName": [
+        {
+          "String": [
+            {
+              "MultilingualStringValue": {
+                "LanguageTag": "en",
+                "Value": "tenure"
+              }
+            }
+          ]
+        }
+      ],
+      "QuestionText": [
+        {
+          "TextContent": [
+            {
+              "Text": {
+                "MultilingualStringValue": {
+                  "LanguageTag": "en",
+                  "Value": "Do you own or rent your home?"
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "OutParameter": [
+        {
+          "URN": "urn:ddi:org.example.households:tenure.out-tenure:1",
+          "Agency": "org.example.households",
+          "ID": "tenure.out-tenure",
+          "Version": "1",
+          "ParameterName": [
+            {
+              "String": [
+                {
+                  "MultilingualStringValue": {
+                    "LanguageTag": "en",
+                    "Value": "tenure"
+                  }
+                }
+              ]
+            }
+          ],
+          "ValueRepresentation": {
+            "$type": "CodeDomain",
+            "CodeListReference": {
+              "$type": "CodeList",
+              "value": [
+                "org.example.households",
+                "tenure.codes",
+                "1"
+              ]
+            }
+          }
+        }
+      ],
+      "QuestionIntent": {
+        "Content": [
+          {
+            "MultilingualStringValue": {
+              "LanguageTag": "en",
+              "Value": "Housing tenure of the household"
+            }
+          }
+        ]
+      },
+      "ResponseDomain": {
+        "$type": "CodeDomain",
+        "CodeListReference": {
+          "$type": "CodeList",
+          "value": [
+            "org.example.households",
+            "tenure.codes",
+            "1"
+          ]
+        },
+        "ResponseCardinality": {
+          "MaximumResponses": 1
+        }
+      }
+    },
+    "org.example.households:rent:1": {
+      "URN": "urn:ddi:org.example.households:rent:1",
+      "Agency": "org.example.households",
+      "ID": "rent",
+      "Version": "1",
+      "QuestionItemName": [
+        {
+          "String": [
+            {
+              "MultilingualStringValue": {
+                "LanguageTag": "en",
+                "Value": "rent"
+              }
+            }
+          ]
+        }
+      ],
+      "QuestionText": [
+        {
+          "TextContent": [
+            {
+              "Text": {
+                "MultilingualStringValue": {
+                  "LanguageTag": "en",
+                  "Value": "How much is your rent each month, in dollars?"
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "OutParameter": [
+        {
+          "URN": "urn:ddi:org.example.households:rent.out-rent:1",
+          "Agency": "org.example.households",
+          "ID": "rent.out-rent",
+          "Version": "1",
+          "ParameterName": [
+            {
+              "String": [
+                {
+                  "MultilingualStringValue": {
+                    "LanguageTag": "en",
+                    "Value": "rent"
+                  }
+                }
+              ]
+            }
+          ],
+          "ValueRepresentation": {
+            "$type": "NumericDomain",
+            "NumberRange": [
+              {
+                "Low": {
+                  "DecimalValue": 0,
+                  "IsInclusive": true
+                }
+              }
+            ],
+            "NumericTypeCode": {
+              "StringValue": "Integer"
+            }
+          }
+        }
+      ],
+      "QuestionIntent": {
+        "Content": [
+          {
+            "MultilingualStringValue": {
+              "LanguageTag": "en",
+              "Value": "Monthly rent paid by renting households"
+            }
+          }
+        ]
+      },
+      "ResponseDomain": {
+        "$type": "NumericDomain",
+        "NumberRange": [
+          {
+            "Low": {
+              "DecimalValue": 0,
+              "IsInclusive": true
+            }
+          }
+        ],
+        "NumericTypeCode": {
+          "StringValue": "Integer"
+        }
+      }
+    },
+    "org.example.households:comments:1": {
+      "URN": "urn:ddi:org.example.households:comments:1",
+      "Agency": "org.example.households",
+      "ID": "comments",
+      "Version": "1",
+      "QuestionItemName": [
+        {
+          "String": [
+            {
+              "MultilingualStringValue": {
+                "LanguageTag": "en",
+                "Value": "comments"
+              }
+            }
+          ]
+        }
+      ],
+      "QuestionText": [
+        {
+          "TextContent": [
+            {
+              "Text": {
+                "MultilingualStringValue": {
+                  "LanguageTag": "en",
+                  "Value": "Is there anything else you'd like to tell us?"
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "OutParameter": [
+        {
+          "URN": "urn:ddi:org.example.households:comments.out-comments:1",
+          "Agency": "org.example.households",
+          "ID": "comments.out-comments",
+          "Version": "1",
+          "ParameterName": [
+            {
+              "String": [
+                {
+                  "MultilingualStringValue": {
+                    "LanguageTag": "en",
+                    "Value": "comments"
+                  }
+                }
+              ]
+            }
+          ],
+          "ValueRepresentation": {
+            "$type": "TextDomain",
+            "MaxLength": 500
+          }
+        }
+      ],
+      "QuestionIntent": {
+        "Content": [
+          {
+            "MultilingualStringValue": {
+              "LanguageTag": "en",
+              "Value": "Open feedback at the end of the interview"
+            }
+          }
+        ]
+      },
+      "ResponseDomain": {
+        "$type": "TextDomain",
+        "MaxLength": 500
+      }
+    }
+  },
+  "Universe": {
+    "org.example.households:universe-renters:1": {
+      "URN": "urn:ddi:org.example.households:universe-renters:1",
+      "Agency": "org.example.households",
+      "ID": "universe-renters",
+      "Version": "1",
+      "UniverseName": [
+        {
+          "String": [
+            {
+              "MultilingualStringValue": {
+                "LanguageTag": "en",
+                "Value": "renters"
+              }
+            }
+          ]
+        }
+      ],
+      "Label": [
+        {
+          "Content": [
+            {
+              "MultilingualStringValue": {
+                "LanguageTag": "en",
+                "Value": "Respondents who rent their home"
+              }
+            }
+          ]
+        }
+      ],
+      "Description": {
+        "Content": [
+          {
+            "MultilingualStringValue": {
+              "LanguageTag": "en",
+              "Value": "Respondents who rent their home"
+            }
+          }
+        ]
+      }
+    }
+  }
+}

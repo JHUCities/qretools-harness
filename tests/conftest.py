@@ -9,6 +9,7 @@ from fake import Handler, Server
 def server() -> Iterator[Server]:
     s = Server(("127.0.0.1", 0), Handler)
     s.received = []
+    s.pages = {}
     thread = threading.Thread(target=s.serve_forever, daemon=True)
     thread.start()
     yield s
