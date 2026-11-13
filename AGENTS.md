@@ -28,7 +28,7 @@ examples/
   config.toml   an example config; the tests read it
 tests/
   fake.py       a stand-in for running processes
-  test_*.py     unit tests; test_integration.py builds a real workspace when asked
+  test_*.py     unit tests; test_integration.py talks to a model server when asked
 ```
 
 ## How the harness runs qretools
@@ -36,27 +36,11 @@ tests/
 `qretools.py` is the only module that starts a process. Do not call `subprocess` anywhere
 else.
 
-All commands except `build` run one qretools version, `QRETOOLS` in `qretools.py`, with
-`npx -y`. Change the version only there. `npx` with an exact version runs that version
-from npm, never a `qretools` on `PATH`. `QRETOOLS_HARNESS_QRETOOLS`, for development
-only, names a qretools build (its JS file); the harness then runs it with `node`, and
-records its SHA-256 digest as its version.
-
-`build` runs the qretools that the workspace pins:
-
-1. `mise ls --current --json npm:qretools`, in the workspace, gives the pinned version and
-   its install path. No pin, or a pin that is not installed, is a refusal.
-2. `mise bin-paths npm:qretools` gives the directories of that tool. The harness uses the
-   `qretools` file in the directory inside the install path.
-3. The harness runs that file by its absolute path with `mise exec --`, in the workspace,
-   so that node is the version the workspace pins.
-
-A `qretools` on `PATH` is never used. A global install can shadow the pinned one.
-
-This is different from the workspace CI, which runs `mise exec -- which qretools` and stops
-if the result is not inside `mise where npm:qretools`. The harness does not need that
-check, because it never looks for qretools on `PATH`. A global install therefore cannot
-stop the harness. Do not change the harness to match the CI.
+The harness runs one qretools version, `QRETOOLS` in `qretools.py`, with `npx -y`. Change
+the version only there. `npx` with an exact version runs that version from npm, never a
+`qretools` on `PATH`. `QRETOOLS_HARNESS_QRETOOLS`, for development only, names a qretools
+build (its JS file); the harness then runs it with `node`, and records its SHA-256 digest
+as its version.
 
 ## The config
 

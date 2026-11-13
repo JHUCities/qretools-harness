@@ -13,6 +13,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from types import MappingProxyType
+from typing import Any
 from urllib.parse import urlsplit
 
 from qretools_harness.qretools import Refused
@@ -233,6 +234,42 @@ def parse(text: str, folder: Path) -> Config | Refused:
         return Refused(f"The config isn't TOML: {error}.")
     except _Bad as bad:
         return Refused(str(bad))
+
+
+def rosters(ddi: object) -> Refused | None:
+    """Why the harness can't run an instrument that has a roster, until qretools can
+    record roster rows in a dataset.
+
+    This reads how qretools writes a roster in DDI: a Loop (a counted roster, and `each`
+    over one), or a RepeatUntil with a ConstructName (a roster that ends with `more`).
+    A RepeatUntil without a name is the re-ask of a check (`ensure`), not a roster.
+    """
+    if not isinstance(ddi, dict):
+        return None
+    found = [
+        item
+        for kind in ("Loop", "RepeatUntil")
+        if isinstance(items := ddi.get(kind), dict)
+        for item in items.values()
+        if isinstance(item, dict) and (kind == "Loop" or item.get("ConstructName"))
+    ]
+    if not found:
+        return None
+    names = sorted({_name(item) for item in found})
+    return Refused(
+        f"The instrument has rosters ({', '.join(names)}). The harness can't run them"
+        " yet, because qretools can't record roster rows in a dataset."
+    )
+
+
+def _name(item: Mapping[str, Any]) -> str:
+    """A construct's name, as qretools writes it in DDI; its ID if it has none."""
+    try:
+        return str(
+            item["ConstructName"][0]["String"][0]["MultilingualStringValue"]["Value"]
+        )
+    except (KeyError, IndexError, TypeError):
+        return str(item.get("ID", "?"))
 
 
 def stale(config: Config, ddi: object) -> Refused | None:

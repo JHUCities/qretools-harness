@@ -15,13 +15,6 @@ def parser() -> argparse.ArgumentParser:
         description="Runs qretools instruments and reads answer sets, keyed by DDI variable.",
     )
     commands = top.add_subparsers(dest="command", required=True)
-    build = commands.add_parser(
-        "build", help="build a workspace's versioned DDI with qretools"
-    )
-    build.add_argument("workspace", type=Path, help="the qretools workspace")
-    build.add_argument(
-        "-o", "--outdir", type=Path, help="where to write (default: <workspace>/dist)"
-    )
     check = commands.add_parser(
         "check-config", help="check a config against the DDI of its instrument"
     )
@@ -46,7 +39,7 @@ def checked(config_path: Path) -> config.Config | qretools.Refused:
         )
     except ValueError:
         return qretools.Refused(f"The instrument {parsed.instrument} isn't JSON.")
-    return config.stale(parsed, ddi) or parsed
+    return config.rosters(ddi) or config.stale(parsed, ddi) or parsed
 
 
 def check_config(config_path: Path) -> int:
@@ -60,22 +53,6 @@ def check_config(config_path: Path) -> int:
     return 0
 
 
-def build(workspace: Path, outdir: Path | None, run: qretools.Run) -> int:
-    workspace = workspace.resolve()
-    if not workspace.is_dir():
-        return refuse(qretools.Refused(f"{workspace} isn't a directory."))
-    # Relative to where the command was typed, never to the workspace.
-    out = (outdir or workspace / "dist").resolve()
-    q = qretools.resolve(workspace, run)
-    if isinstance(q, qretools.Refused):
-        return refuse(q)
-    built = qretools.build(q, out, run)
-    if isinstance(built, qretools.Refused):
-        return refuse(built)
-    print(f"DDI written to {built.ddi} (qretools {q.version})")
-    return 0
-
-
 def refuse(refused: qretools.Refused) -> int:
     print(f"qretools-harness: {refused.reason}", file=sys.stderr)
     return 1
@@ -86,8 +63,6 @@ def main(
 ) -> int:
     args = parser().parse_args(argv)
     match args.command:
-        case "build":
-            return build(args.workspace, args.outdir, run)
         case "check-config":
             return check_config(args.config)
     return 2  # unreachable: argparse requires a known command
