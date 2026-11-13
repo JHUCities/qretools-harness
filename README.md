@@ -5,7 +5,7 @@ qretools-harness asks a language model the questions of a
 respondent. The answers are a synthetic dataset, keyed by the DDI variables of the
 instrument.
 
-This version is the first part. It has one command, `build`. The other parts come later.
+This version has two commands: `build` and `check-config`. The other parts come later.
 The section "The design" tells what they do.
 
 ## The design
@@ -138,7 +138,7 @@ population. A model run has no weight: each answer counts once.
 | `qretools filter --access` | done, in qretools |
 | `qretools provenance`: the provenance of a run folder | in work, in qretools |
 | `qretools next`: the next question for a respondent, so that the interview follows the routing | in work, in qretools |
-| The config, and the prompts | later |
+| The config, its check against the DDI, and the client for the model server | done |
 | `qretools-harness respond`: a model answers the instrument, as an interview | later |
 | Weights in the provenance | later |
 
@@ -191,6 +191,62 @@ The exit codes are:
 | 1 | qretools or mise refused, or a step failed. |
 | 2 | The command line is not correct. |
 
+## Write a config
+
+A config holds the settings of a run with a model. It is a TOML file.
+[`examples/config.toml`](examples/config.toml) is an example.
+
+| Table | Key | What it holds |
+|---|---|---|
+| (top) | `instrument` | The path of the instrument's DDI, as `qretools build` writes it (`dist/instruments/<name>.json`). A relative path starts from the folder of the config, not from the current directory. Write this key before the first table, because TOML puts a key that follows a table in that table. |
+| `model` | `endpoint` | The base URL of an OpenAI-compatible server, for example `http://127.0.0.1:9931/v1` for llama.cpp. |
+| `model` | `name` | The name of the model that the harness asks for. |
+| `model` | `timeout` | The maximum time for one reply, in seconds. |
+| `generation` | any key | The settings that the harness sends to the server, for example `temperature`, `max_tokens` and `seed`. The harness sends them without change. It refuses `model`, `messages`, `stream` and `n`, because it sets them itself. |
+| `run` | `system` | The system prompt. |
+| `run` | `missing` | The missing codes that the model can give, for example `["D", "R"]`. The harness offers a code only for a question that has it. If you do not give this key, the harness offers no missing code, and the model must choose an answer. |
+| `run` | `no_answer` | The missing code that the harness records if the model gives no allowed answer. Each question must have this code. |
+| `run` | `draw` | The names of inputs that the harness chooses at random from their choices, with the seed of the respondent. |
+| `inputs` | an input's name | The value of an input of the instrument, for each respondent. |
+| `prompts` | a question's URN | Extra text for the model about one question. The key is the URN of the question, with its version. |
+
+The config holds no fact that the DDI holds. The questions and their versions come from
+the DDI. The version in each URN of `prompts` is there to find a changed question.
+
+A tag reference (`owner/repo@tag:name`) is not supported yet for `instrument`, because
+`qretools next` reads only a DDI file. The harness refuses it. Build the DDI with
+qretools, and give its path.
+
+The config holds no API key. Do not write a key in it, because a run keeps a copy of the
+config.
+
+Unknown keys are refused, except in `generation`. Thus the harness does not find an
+incorrect name in `generation`, for example `temprature`.
+
+## Check a config
+
+```sh
+qretools-harness check-config config.toml
+```
+
+The command reads the instrument that the config names. It refuses the config if a key
+or a value is not correct. It refuses an instrument that it cannot read, or that holds no
+question. It also refuses the config if a URN in `prompts` is not a question in the DDI,
+or if the version of the question in the DDI is different. Then the question changed
+after you wrote its prompt. Read the question again, change the prompt if necessary, and
+write the new version in the URN.
+
+The command does not connect to the model server, and does not run qretools. The exit
+codes are the same as for `build`.
+
+## The qretools version
+
+All commands except `build` run one qretools version: the version in `QRETOOLS` in
+[`src/qretools_harness/qretools.py`](src/qretools_harness/qretools.py), now
+`qretools@2.0.0-alpha.12`. The harness runs it with `npx -y`, so you need Node 22 or
+later and access to the npm registry the first time. `build` runs the version that the
+workspace pins.
+
 ## Development
 
 1. Install the dependencies:
@@ -214,6 +270,20 @@ mise is installed and `QRETOOLS_WORKSPACE` gives the path of a workspace:
 ```sh
 QRETOOLS_WORKSPACE=../qretools-gss uv run pytest
 ```
+
+One test sends a message to a model server. It runs only if
+`QRETOOLS_HARNESS_MODEL_URL` gives the base URL of the server.
+`QRETOOLS_HARNESS_MODEL` gives the name of the model:
+
+```sh
+QRETOOLS_HARNESS_MODEL_URL=http://127.0.0.1:9931/v1 \
+QRETOOLS_HARNESS_MODEL=ggml-org/LFM3-Omni-2B-GGUF:Q8_0 uv run pytest
+```
+
+To use a qretools build that is not released, set `QRETOOLS_HARNESS_QRETOOLS` to the
+path of its JavaScript file, for example `packages/cli/dist/qretools.js` in a clone of
+qretools. The harness then runs that file with the `node` on `PATH`, in place of
+`QRETOOLS`. This is for development only.
 
 ## Licence
 

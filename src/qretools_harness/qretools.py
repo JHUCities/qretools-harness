@@ -1,20 +1,31 @@
 """The only module that runs the qretools CLI.
 
-qretools runs with the version that the workspace's mise.toml pins. A qretools found on
-PATH is never used: a global one can shadow mise's. So this module asks mise where the
-pinned version is installed, and runs that file by its absolute path, through
-`mise exec` so that node is the workspace's too.
+Two qretools versions are used, and a qretools found on PATH is never used:
+
+- `build` runs the version that the workspace's mise.toml pins. This module asks mise
+  where that version is installed, and runs that file by its absolute path, through
+  `mise exec` so that node is the workspace's too.
+- Every other command runs QRETOOLS, the version this harness is written for, through
+  `npx`, which runs exactly that version from npm. OVERRIDE, for development only,
+  names a qretools build to run with node in its place.
 
 Every function returns a value. Nothing here raises for a refusal or a failed command.
 """
 
+import hashlib
 import json
+import os
 import subprocess
-from collections.abc import Callable, Sequence
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Protocol
 
 TOOL = "npm:qretools"
+# The qretools that the harness calls, except for `build`. Change it only here.
+QRETOOLS = "qretools@2.0.0-alpha.12"
+# For development only: the path of a qretools build (its JS file) to run in its place.
+OVERRIDE = "QRETOOLS_HARNESS_QRETOOLS"
 
 
 @dataclass(frozen=True)
@@ -35,11 +46,15 @@ class Refused:
 
 @dataclass(frozen=True)
 class Qretools:
-    """The qretools that a workspace pins, ready to run."""
+    """A qretools ready to run: in `workspace` (the folder it runs in), with `command`."""
 
     workspace: Path
-    binary: Path
-    version: str
+    command: tuple[str, ...]
+    version: str  # the version, or the digest of a development build
+
+    def argv(self, *args: str) -> list[str]:
+        """The command line that runs qretools with `args`."""
+        return [*self.command, *args]
 
 
 @dataclass(frozen=True)
@@ -47,20 +62,34 @@ class Built:
     ddi: Path
 
 
-# Runs argv in a directory. With capture false, output goes straight to the terminal.
-Run = Callable[[Sequence[str], Path, bool], Completed | Refused]
+class Run(Protocol):
+    """Runs argv in a directory. With capture false, output goes straight to the terminal.
+    `stdin` is the text the command reads, if any."""
+
+    def __call__(
+        self, argv: Sequence[str], cwd: Path, capture: bool, stdin: str | None = None
+    ) -> Completed | Refused: ...
 
 
-def run_process(argv: Sequence[str], cwd: Path, capture: bool) -> Completed | Refused:
+def run_process(
+    argv: Sequence[str], cwd: Path, capture: bool, stdin: str | None = None
+) -> Completed | Refused:
     try:
-        # A captured call gets no stdin, so a prompt from mise fails at once, never waits unseen.
-        stdin = subprocess.DEVNULL if capture else None
+        # A captured call without input gets no stdin, so a prompt fails at once, never
+        # waits unseen.
+        no_input = subprocess.DEVNULL if capture else None
         done = subprocess.run(
-            argv, cwd=cwd, stdin=stdin, capture_output=capture, text=True, check=False
+            argv,
+            cwd=cwd,
+            input=stdin,
+            stdin=None if stdin is not None else no_input,
+            capture_output=capture,
+            text=True,
+            check=False,
         )
     except OSError as error:
         return Refused(
-            f"Can't run {argv[0]}: {error.strerror or error}. Is mise installed?"
+            f"Can't run {argv[0]}: {error.strerror or error}. Is it installed?"
         )
     return Completed(done.returncode, done.stdout or "", done.stderr or "")
 
@@ -119,7 +148,21 @@ def resolve(workspace: Path, run: Run = run_process) -> Qretools | Refused:
     binary = binary_of(paths.stdout, install)
     if isinstance(binary, Refused):
         return binary
-    return Qretools(workspace, binary, version)
+    return Qretools(workspace, ("mise", "exec", "--", str(binary)), version)
+
+
+def harness(cwd: Path) -> Qretools | Refused:
+    """QRETOOLS through npx, run in `cwd`; or the development build OVERRIDE names."""
+    override = os.environ.get(OVERRIDE)
+    if not override:
+        return Qretools(cwd, ("npx", "-y", QRETOOLS), QRETOOLS.partition("@")[2])
+    binary = Path(override).resolve()
+    try:
+        digest = hashlib.sha256(binary.read_bytes()).hexdigest()
+    except OSError as error:
+        return Refused(f"{OVERRIDE} names {binary}, which can't be read: {error}.")
+    # A development build has no release to name, so its digest is its version.
+    return Qretools(cwd, ("node", str(binary)), f"development build sha256:{digest}")
 
 
 def build(q: Qretools, outdir: Path, run: Run = run_process) -> Built | Refused:
@@ -127,8 +170,7 @@ def build(q: Qretools, outdir: Path, run: Run = run_process) -> Built | Refused:
 
     qretools prints its own findings and refusals; they go straight to the terminal.
     """
-    argv = ["mise", "exec", "--", str(q.binary), "build", ".", "-o", str(outdir)]
-    done = run(argv, q.workspace, False)
+    done = run(q.argv("build", ".", "-o", str(outdir)), q.workspace, False)
     if isinstance(done, Refused):
         return done
     if done.code != 0:

@@ -1,14 +1,18 @@
 from pathlib import Path
 
+import pytest
 from fake import Fake, installed, pinned, working
 
 from qretools_harness.qretools import (
+    OVERRIDE,
+    QRETOOLS,
     Built,
     Completed,
     Qretools,
     Refused,
     binary_of,
     build,
+    harness,
     pin_of,
     resolve,
 )
@@ -58,7 +62,7 @@ def test_resolve_asks_mise_in_the_workspace(tmp_path: Path) -> None:
     fake = working(tmp_path)
     q = resolve(WS, fake)
     binary = installed(tmp_path) / "node_modules/.bin/qretools"
-    assert q == Qretools(WS, binary, "2.0.0-alpha.10")
+    assert q == Qretools(WS, ("mise", "exec", "--", str(binary)), "2.0.0-alpha.10")
     assert all(cwd == WS and capture for _, cwd, capture in fake.calls)
 
 
@@ -79,7 +83,7 @@ def test_resolve_without_mise_is_refused() -> None:
 
 def test_build_runs_the_pinned_binary_through_mise_exec(tmp_path: Path) -> None:
     fake = working(tmp_path)
-    q = Qretools(WS, Path("/bin/qretools"), "x")
+    q = Qretools(WS, ("mise", "exec", "--", "/bin/qretools"), "x")
     assert build(q, Path("/out"), fake) == Built(Path("/out/ddi.json"))
     [(argv, cwd, capture)] = fake.calls
     assert argv == ["mise", "exec", "--", "/bin/qretools", "build", ".", "-o", "/out"]
@@ -88,5 +92,39 @@ def test_build_runs_the_pinned_binary_through_mise_exec(tmp_path: Path) -> None:
 
 
 def test_a_refused_build_is_refused(tmp_path: Path) -> None:
-    q = Qretools(WS, Path("/bin/qretools"), "x")
+    q = Qretools(WS, ("mise", "exec", "--", "/bin/qretools"), "x")
     assert isinstance(build(q, Path("/out"), working(tmp_path, 1)), Refused)
+
+
+def test_the_harness_runs_the_one_pinned_version_through_npx(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.delenv(OVERRIDE, raising=False)
+    q = harness(WS)
+    assert isinstance(q, Qretools)
+    assert q.argv("next") == ["npx", "-y", QRETOOLS, "next"]
+    assert f"qretools@{q.version}" == QRETOOLS
+    # The README names the version too.
+    readme = Path(__file__).parent.parent / "README.md"
+    assert f"`{QRETOOLS}`" in readme.read_text()
+
+
+def test_a_development_build_is_run_with_node_and_named_by_its_digest(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    build_file = tmp_path / "qretools.js"
+    build_file.write_text("x")
+    monkeypatch.setenv(OVERRIDE, str(build_file))
+    q = harness(WS)
+    assert isinstance(q, Qretools)
+    assert q.argv("next") == ["node", str(build_file), "next"]
+    assert q.version.startswith("development build sha256:2d711642")
+
+
+def test_a_development_build_that_cant_be_read_is_refused(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv(OVERRIDE, str(tmp_path / "none.js"))
+    refused = harness(WS)
+    assert isinstance(refused, Refused)
+    assert OVERRIDE in refused.reason
